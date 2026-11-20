@@ -79,6 +79,7 @@
   .vs b { transform: rotate(-45deg); font-family: var(--mono); font-size: 10px; font-weight: 700; }
   .slot { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .slot .card { flex: 1; }
   .did { align-self: flex-end; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 2px 3px; text-decoration: underline; text-underline-offset: 3px; }
+  .bubble { display: inline-block; margin-left: 10px; background: var(--orange); color: var(--white); padding: 3px 8px; border-radius: 999px; font-size: 10px; vertical-align: middle; }
   .did.sure { color: var(--orange); font-weight: 700; } .did[disabled] { opacity: .5; }
   .under { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; } .under .did { align-self: auto; }
   .pinbox { display: flex; gap: 6px; align-items: center; } .pinbox input { font: inherit; font-size: 16px; border: 1.5px solid var(--ink); background: var(--fog); padding: 6px 8px; border-radius: 0; color: var(--ink); }
@@ -388,11 +389,13 @@
   // the bottom first (where the RUBRIC expects it), so agreeing with the RUBRIC costs about one pick per task.
   // It replays from the saved picks every time, which makes undo and switching devices free.
   function solve() {
-    const memo = new Map(picks.map((p) => [p.w + "|" + p.l, p]));
+    // His last ranking rides along as known (S.seed), so only tasks that are new get asked about.
+    const known = [...((S && S.seed) || []), ...picks];
+    const memo = new Map(known.map((p) => [p.w + "|" + p.l, p]));
     // What he's already told us also answers pairs he never saw: if A went before B and B before C, A goes before C.
     // That matters most when a task leaves mid-ranking (pinned, or already done) and the rest get compared in a
     // different order: his earlier picks still count instead of being asked again.
-    const next = new Map(); for (const p of picks) { if (!next.has(p.w)) next.set(p.w, []); next.get(p.w).push(p.l); }
+    const next = new Map(); for (const p of known) { if (!next.has(p.w)) next.set(p.w, []); next.get(p.w).push(p.l); }
     const reach = (from, to) => { const seen = new Set([from]), q = [from]; while (q.length) { for (const n of next.get(q.pop()) || []) { if (n === to) return true; if (!seen.has(n)) { seen.add(n); q.push(n); } } } return false; };
     const beats = (x, y) => memo.has(x + "|" + y) ? true : memo.has(y + "|" + x) ? false : reach(x, y) ? true : reach(y, x) ? false : undefined;
     const items = live();
@@ -604,6 +607,7 @@
       if (!r.ok || !H) return fail("This link is done.", (H && H.error) || "Ask Sol for your app link again");
     }
     $("hcount").textContent = pad(H.total) + " open tasks";
+    try { if (navigator.setAppBadge) { if (H.unranked) navigator.setAppBadge(H.unranked); else navigator.clearAppBadge(); } } catch {}
     const box = $("scopes"); box.innerHTML = "";
     for (const sc of [{ name: "all", label: "Everything", count: H.total }, ...H.scopes.map((x) => ({ ...x, label: x.name }))]) {
       const b = document.createElement("button"); b.className = "scope"; b.disabled = sc.count < 3;
@@ -611,6 +615,8 @@
       const going = (H.resume || []).find((x) => String(x.scope).toLowerCase() === sc.name.toLowerCase());
       const c = document.createElement("span"); c.className = "mono"; c.textContent = going ? "Resume \u00b7 " + going.picks + " picks in" : sc.count < 3 ? sc.count + " (too few to rank)" : pad(sc.count) + " tasks";
       if (going) { b.disabled = false; c.style.color = "var(--orange)"; }
+      // New tasks he hasn't ranked yet: a bubble on Everything.
+      if (sc.name === "all" && H.unranked && !going) { const dot = document.createElement("span"); dot.className = "bubble mono"; dot.textContent = H.unranked + " new"; a.appendChild(dot); }
       b.append(a, c); b.onclick = () => startScope(sc.name, b); box.appendChild(b);
     }
     const days = H.map ? Math.floor((Date.now() - Date.parse(H.map.at)) / 864e5) : null;
