@@ -330,9 +330,9 @@
       <div class="bar"><span class="mono" id="pickno">Pick 01</span><div class="track"><u id="fill"></u></div><span class="mono" id="placed"></span></div>
       <div class="q">Which one comes first?</div>
       <div class="duel">
-        <div class="slot"><button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pA">Pin to date</button><button class="did" id="dA">Already did this</button></div></div>
+        <div class="slot"><button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pA">Pin to date</button><button class="did" id="rA">Rename</button><button class="did" id="dA">Already did this</button></div></div>
         <div class="vs"><b>VS</b></div>
-        <div class="slot"><button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pB">Pin to date</button><button class="did" id="dB">Already did this</button></div></div>
+        <div class="slot"><button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pB">Pin to date</button><button class="did" id="rB">Rename</button><button class="did" id="dB">Already did this</button></div></div>
       </div>
       <div class="tools"><button class="tool" id="undo">&larr; Undo</button><button class="tool" id="tie">Too close to call</button></div>
     </section>
@@ -447,7 +447,8 @@
     $("placed").textContent = pad(r.placed) + " / " + pad(n);
     $("fill").style.width = Math.round((r.placed / n) * 100) + "%";
     for (const b of [$("dA"), $("dB")]) { b.classList.remove("sure"); b.textContent = "Already did this"; b.disabled = false; }
-    for (const b of [$("pA"), $("pB")]) { const old = b.parentNode.querySelector(".pinbox"); if (old) old.remove(); b.hidden = false; b.disabled = false; b.textContent = "Pin to date"; }
+    for (const b of [$("pA"), $("pB"), $("rA"), $("rB")]) { b.parentNode.querySelectorAll(".pinbox").forEach((x) => x.remove()); b.hidden = false; b.disabled = false; }
+    $("pA").textContent = $("pB").textContent = "Pin to date"; $("rA").textContent = $("rB").textContent = "Rename";
     show("rank");
   }
 
@@ -461,6 +462,23 @@
     setTimeout(() => { el.classList.remove("pick"); picks.push(p); save(); render(); }, tie ? 0 : 130);
   }
 
+  // Rename (Zach, Nov 20): fix a task's name while he's looking at it. It changes for good: on his calendar, in
+  // Sol's records, and on the client's Monday board.
+  function renameTask(id, btn) {
+    const it = byId().get(id); if (!it) return;
+    const box = document.createElement("span"), inp = document.createElement("input"), go = document.createElement("button");
+    box.className = "pinbox"; box.style.flex = "1 1 100%"; inp.type = "text"; inp.value = it.title; inp.maxLength = 120; inp.style.flex = "1"; inp.style.minWidth = "0"; go.className = "did sure"; go.textContent = "Save name";
+    box.append(inp, go); btn.hidden = true; btn.after(box); inp.focus(); inp.select();
+    for (const ev of ["keydown", "keyup", "keypress"]) inp.addEventListener(ev, (e) => { e.stopPropagation(); if (ev === "keydown" && e.key === "Enter") go.click(); if (ev === "keydown" && e.key === "Escape") { box.remove(); btn.hidden = false; } });
+    go.onclick = async () => { const v = inp.value.replace(/\s+/g, " ").trim(); if (!v || v === it.title) { box.remove(); btn.hidden = false; return; }
+      go.disabled = true; go.textContent = "Renaming...";
+      try {
+        if (!demo) { const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rename_id: id, title: v }) });
+          if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "Couldn't rename it"); }
+        it.title = v;
+        if (order && $("result").classList.contains("on")) renderResult(); else render();
+      } catch (e) { box.remove(); btn.hidden = false; btn.textContent = (e.message || "Couldn't rename it") + " Tap to retry"; } };
+  }
   // "Pin to date" (Zach, Nov 20): this one happens on a set day, so there's nothing to rank. He confirms the date
   // (it starts on the day it's already on); it leaves the ranking and no repack will ever move it.
   function pinTo(id, btn) {
@@ -507,6 +525,7 @@
       sel.onchange = () => { const v = +sel.value; if (v === it.minutes) delete mins[id]; else mins[id] = v; save(); renderResult(); };
       const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
       const pn = document.createElement("button"); pn.className = "did"; pn.textContent = "Pin to date"; pn.onclick = () => pinTo(id, pn);
+      const rn = document.createElement("button"); rn.className = "did"; rn.textContent = "Rename"; rn.onclick = () => renameTask(id, rn);
       const cur = dues[id] !== undefined ? dues[id] : (it.due || "");
       const due = document.createElement("label"); due.className = "due" + (cur ? " set" : ""); due.append(cur ? "Due" : "ASAP \u00b7 set a due date");
       // No due date is the default: it's done as soon as it fits, in ranked order. The date box only appears once he
@@ -516,7 +535,7 @@
       di.onchange = () => { if (di.value === (it.due || "")) delete dues[id]; else dues[id] = di.value; save(); renderResult(); };
       due.appendChild(di);
       if (cur) { const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Clear due date"); x.onclick = (e) => { e.preventDefault(); if (it.due) dues[id] = ""; else delete dues[id]; save(); renderResult(); }; due.appendChild(x); }
-      ctl.append(sel, due, pn, dn); t.appendChild(ctl);
+      ctl.append(sel, due, pn, rn, dn); t.appendChild(ctl);
       const mv = document.createElement("div"); mv.className = "mv";
       for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down"); b.disabled = i + d < 0 || i + d >= order.length;
         b.onclick = () => { [order[i], order[i + d]] = [order[i + d], order[i]]; renderResult(); }; mv.appendChild(b); }
@@ -1243,6 +1262,7 @@
 
   $("start").onclick = render;
   $("A").onclick = () => choose(0); $("B").onclick = () => choose(1);
+  $("rA").onclick = () => pending && renameTask(pending[0], $("rA")); $("rB").onclick = () => pending && renameTask(pending[1], $("rB"));
   $("pA").onclick = () => pending && pinTo(pending[0], $("pA")); $("pB").onclick = () => pending && pinTo(pending[1], $("pB"));
   $("dA").onclick = () => pending && markDone(pending[0], $("dA")); $("dB").onclick = () => pending && markDone(pending[1], $("dB"));
   $("tie").onclick = () => choose(0, true);
