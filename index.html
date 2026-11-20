@@ -183,6 +183,12 @@
   .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
   .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 50; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
   .hud.sheet { display: none; } .hud.sheet.on { display: flex; }
+  .sheet .bw { max-height: min(62vh, 560px); overflow-y: auto; display: grid; gap: 18px; padding-right: 4px; overscroll-behavior: contain; }
+  .sheet .bw h4 { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; font-weight: 400; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sheet .bw h4 i { width: 11px; height: 11px; background: var(--bg); border: 1.5px solid var(--ink); display: inline-block; }
+  .sheet .bw .br { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: baseline; padding: 7px 0; border-top: 1px solid rgba(29,29,27,.14); font-size: 16px; letter-spacing: -.01em; }
+  .sheet .bw .br .mono { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
+  .sheet .bw .br.q4, .sheet .bw .br.q5 { opacity: .55; }
   .sheet h3 { font-weight: 500; font-size: 22px; letter-spacing: -.02em; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
   .sheet h3 button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
   .pick { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -293,7 +299,7 @@
         <div class="hud legend" id="legend"></div>
         <div class="space" id="space"></div>
         <div class="hud sheet" id="sheet"></div>
-        <div class="hud zoom"><button id="zfull" class="mono">Full</button><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
+        <div class="hud zoom"><button id="zlist" class="mono">List</button><button id="zfull" class="mono">Full</button><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
         <button class="hud tab" id="atab">Areas</button>
         <button class="hud tab" id="mtab">&#9652; Add &middot; Tidy &middot; Seal</button>
         <div class="hint mono" id="mhint">Tap a card to go in. Tap its right side to open it here.</div>
@@ -689,6 +695,28 @@
     setTimeout(() => fit(true), 60);
   };
   document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("full")) { document.body.classList.remove("full"); $("zfull").textContent = "Full"; } });
+  // Best to worst (Zach, Nov 20): a quick read of each Area's Spaces from where they sit on the map. Should-prioritize
+  // comes first, enjoyment second: top right, then top left, then bottom right, then bottom left, then parked. "Top" is
+  // the upper half of the span between his highest and lowest live card; within a quarter, higher on the map wins.
+  function bestSheet() {
+    const live = groups().filter((g) => !g.classList.contains("new") && gy(g) < parkY), ys = live.map(gy), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const Q = ["Priority, enjoy", "Priority, don't enjoy", "Enjoy, less priority", "Less priority, don't enjoy", "Parked"];
+    const q = (g) => !live.includes(g) ? 4 : ((y1 > y0 ? (gy(g) - y0) / (y1 - y0) : 0) <= .5 ? 0 : 2) + (enjoyOf(g) >= 0 ? 0 : 1);
+    sheet.innerHTML = ""; sheet.appendChild(head("Best to worst"));
+    const wrap = document.createElement("div"); wrap.className = "bw";
+    for (const gr of [...G, null]) {
+      const mine = groups().filter((g) => !g.classList.contains("new") && (groupFor(g.dataset.name) || null) === gr).sort((a, b) => q(a) - q(b) || gy(a) - gy(b) || enjoyOf(b) - enjoyOf(a));
+      if (!mine.length) continue;
+      const sec = document.createElement("div"), h = document.createElement("h4"), d = document.createElement("i"), t = document.createElement("span");
+      d.style.setProperty("--bg", gr ? COLORS[gr.color][0] : "#E1DFE0"); t.textContent = gr ? gr.name : "No area"; h.append(d, t); sec.appendChild(h);
+      mine.forEach((g, i) => { const r = document.createElement("div"), n = document.createElement("span"), nm = document.createElement("span"), w = document.createElement("span");
+        r.className = "br q" + (q(g) + 1); n.className = "mono"; n.textContent = pad(i + 1); nm.textContent = g.dataset.name; w.className = "mono"; w.textContent = Q[q(g)]; r.append(n, nm, w); sec.appendChild(r); });
+      wrap.appendChild(sec);
+    }
+    if (!wrap.children.length) { const e = document.createElement("p"); e.className = "mono"; e.textContent = "Nothing placed on the map yet."; wrap.appendChild(e); }
+    sheet.appendChild(wrap); sheet.classList.add("on");
+  }
+  $("zlist").onclick = () => sheet.classList.contains("on") ? closeSheet() : bestSheet();
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
   for (const ev of ["wheel", "pointerdown"]) $("space").addEventListener(ev, (e) => e.stopPropagation());
