@@ -859,7 +859,7 @@
     const sb = el("div", "sboard"), sw = el("div", "sworld"); sb.appendChild(sw);
     const loosePos = (store.get("sr:loose") || {})[name] || { x: 0, y: 0 };
     const schip = (t) => { const c = el("div", "chip"); c.dataset.id = t.id; c.dataset.kind = t.kind || "task";
-      const meta = t.kind === "item" ? (t.on_calendar ? "On " + t.on_calendar : "") : hm(t.minutes) + (t.due ? " · due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : "");
+      const meta = t.kind === "item" ? (t.repeat_uid ? [(t.rule || "Repeats"), t.next ? "next " + t.next.split(", ").slice(0, 2).join(", ") : ""].filter(Boolean).join(" \u00b7 ") : t.on_calendar ? "On " + t.on_calendar : "") : hm(t.minutes) + (t.due ? " · due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : "");
       c.append(el("span", "ctitle", t.title), el("small", "", meta)); return c; };
     const card = (p, k) => { const id = p ? p.id : 0, g = el("div", "grp pj"), tile = el("div", "tile"), ts = under(p ? p.id : null), box = el("div", "tasks"), f = el("form", "padd"), inp = el("input");
       g.dataset.pid = id; g.dataset.has = "1"; if (pshut.has(id)) g.dataset.shut = "1";
@@ -960,21 +960,28 @@
     const ps = document.createElement("select"); for (const p of [null, ...projects]) { const o = document.createElement("option"); o.value = p ? p.id : ""; o.textContent = p ? p.name : "No project"; ps.appendChild(o); }
     ps.value = projects.some((p) => p.id === t.project_id) ? t.project_id : ""; sheet.appendChild(field("Project", ps));
     // Move to another Space. A map-only thing can only go to a Space that isn't 3iM work.
-    const ms = document.createElement("select"); for (const g of groups().filter((g) => t.kind !== "item" || g.dataset.kind !== "client").sort((x, y) => x.dataset.name.localeCompare(y.dataset.name))) { const o = document.createElement("option"); o.value = o.textContent = g.dataset.name; ms.appendChild(o); }
+    const ms = document.createElement("select"); for (const g of groups().filter((g) => t.kind !== "item" || t.repeat_uid || g.dataset.kind !== "client").sort((x, y) => x.dataset.name.localeCompare(y.dataset.name))) { const o = document.createElement("option"); o.value = o.textContent = g.dataset.name; ms.appendChild(o); }
     ms.value = name; sheet.appendChild(field("Move to Space", ms));
+    // Repeats: a 3iM task can be made repeating (its calendar event becomes a series; it leaves Monday and the ranking).
+    let rs = null;
+    if (t.kind !== "item") { rs = document.createElement("select"); for (const [v, l] of [["", "Never"], ["daily", "Daily"], ["weekly", "Weekly"], ["biweekly", "Every 2 weeks"], ["monthly", "Monthly"]]) { const o = document.createElement("option"); o.value = v; o.textContent = l; rs.appendChild(o); } sheet.appendChild(field("Repeats", rs)); }
+    else if (t.repeat_uid) { const p0 = document.createElement("p"); p0.className = "sp-note"; p0.textContent = (t.rule || "Repeats") + (t.next ? ". Next: " + t.next : "") + ". Not ranked, not on Monday."; sheet.appendChild(p0); }
     const acts = document.createElement("div"); acts.className = "acts";
     const act = (label, fn, twice) => { const b = document.createElement("button"); b.className = "did"; b.textContent = label; let armed = !twice;
       b.onclick = async () => { if (!armed) { armed = true; b.textContent = "Tap again to confirm"; return; } b.disabled = true; say(""); try { await fn(); } catch (e) { say(e.message); } closeSheet(); renderSpace(); }; acts.appendChild(b); };
     const gone = () => { if (t.kind === "item") { M.items = M.items.filter((i) => i.id !== t.id); counts(); } else dropTask(t.id); };
-    act(t.kind === "item" ? "Done" : "Already did this", async () => { await spCall({ op: "done_task", id: t.id, kind: t.kind }); gone(); buzz(10); }, t.kind !== "item");
+    act(t.repeat_uid ? "Done for this one" : t.kind === "item" ? "Done" : "Already did this", async () => { const r = await spCall({ op: "done_task", id: t.id, kind: t.kind }); if (r.repeating) say("Done for this one. It'll be back for the next."); else gone(); buzz(10); }, t.kind !== "item" || !!t.repeat_uid);
     if (t.kind === "item" && !t.on_calendar) act("Put on my calendar", async () => { const r = await spCall({ op: "calendar_item", id: t.id }); t.on_calendar = r.on_calendar; say(r.note); });
-    act("Delete", async () => { await spCall({ op: "delete_task", id: t.id, kind: t.kind }); gone(); }, true);
+    act(t.repeat_uid ? "Stop repeating (delete all)" : "Delete", async () => { await spCall({ op: "delete_task", id: t.id, kind: t.kind }); gone(); }, true);
     sheet.appendChild(acts);
     const save = async () => {
       const op = { op: "edit_task", id: t.id, kind: t.kind }, v = ti.value.replace(/\s+/g, " ").trim(), pj = ps.value ? +ps.value : null;
       if (v && v !== t.title) op.title = v;
       if (mi && +mi.value >= 5 && +mi.value !== t.minutes) op.minutes = Math.round(+mi.value);
       if (di && di.value !== (t.dueDay || "")) op.due = di.value;
+      if (rs && rs.value) { closeSheet(); say("");
+        try { const r = await spCall({ op: "repeat_task", id: t.id, freq: rs.value }); if (r.item) { dropTask(t.id); M.items.push(r.item); counts(); say(`${t.title} now repeats.`); } } catch (e) { say(e.message); }
+        return renderSpace(); }
       const moving = ms.value && ms.value !== name;
       if (moving) { op.space = ms.value; op.project_id = null; }
       else if (pj !== (projects.some((p) => p.id === t.project_id) ? t.project_id : null)) op.project_id = pj;
