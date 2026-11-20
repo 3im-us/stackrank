@@ -541,7 +541,7 @@
     const box = $("legend"); box.innerHTML = "";
     for (const gr of G) { const b = document.createElement("button"), d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.append(d, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : "")); b.onclick = () => groupSheet(gr); box.appendChild(b); }
     const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Group"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
-    groups().forEach(paint);
+    groups().forEach(paint); autosave();
   }
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
@@ -552,7 +552,7 @@
     const row = document.createElement("div"); row.className = "pick";
     for (const gr of [...G, null]) { const b = document.createElement("button"); if (gr) { const d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.appendChild(d); }
       b.append(gr ? gr.name : "No group"); if ((gr ? gr.id : undefined) === groupOf[g.dataset.name]) b.classList.add("on");
-      b.onclick = () => { if (gr) groupOf[g.dataset.name] = gr.id; else delete groupOf[g.dataset.name]; paint(g); closeSheet(); buzz(6); }; row.appendChild(b); }
+      b.onclick = () => { if (gr) groupOf[g.dataset.name] = gr.id; else delete groupOf[g.dataset.name]; paint(g); closeSheet(); buzz(6); autosave(); }; row.appendChild(b); }
     const nw = document.createElement("button"); nw.textContent = "+ New group"; nw.style.borderStyle = "dashed";
     nw.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true, g); };
     row.appendChild(nw); sheet.appendChild(row); sheet.classList.add("on");
@@ -605,10 +605,24 @@
       g.className = [...keep, i >= 0 && i < 3 ? "r" + (i + 1) : "", i < 0 && !g.classList.contains("new") ? "parked" : ""].filter(Boolean).join(" ");
       g.querySelector(".rk").textContent = i >= 0 ? pad(i + 1) : ""; }
     const fresh = gs.filter((g) => g.classList.contains("new")).length;
-    $("mleft").textContent = fresh ? pad(fresh) + " still in the pile" : pad(live.length) + " on the map";
+    $("mleft").textContent = (fresh ? pad(fresh) + " still in the pile" : pad(live.length) + " on the map") + (saveNote ? " \u00b7 " + saveNote : "");
     $("mnext").disabled = !live.length; $("mseal2").disabled = !live.length;
     $("mnextn").textContent = fresh ? "+ parks " + fresh : "";
     return live;
+  }
+  // Autosave: the board is kept as he works (positions, groups, what he added, where tasks hang). Sealing is still
+  // what changes his priorities.
+  let saveNote = "", draftTimer = null, loading = false;
+  function autosave() {
+    if (demo || loading || !M) return;
+    saveNote = "Saving"; clearTimeout(draftTimer);
+    draftTimer = setTimeout(async () => {
+      const gs = groups(), pos = {}, tasks = {};
+      for (const g of gs) { if (!g.classList.contains("new")) pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
+      try { const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ draft: { buckets: gs.map((g) => g.dataset.name), pos, parkY, groups: G, groupOf, tasks } }) }); saveNote = r.ok ? "Saved" : "Not saved"; }
+      catch { saveNote = "Not saved"; }
+      if ($("map").classList.contains("on")) rerank();
+    }, 700);
   }
   function grp(b, x, y, fresh, hint) {
     const g = document.createElement("div"); g.className = "grp" + (fresh ? " new" : ""); g.dataset.name = b.name;
@@ -619,7 +633,7 @@
     const ct = document.createElement("span"); ct.className = "ct mono"; ct.textContent = b.count ? b.count + (b.count === 1 ? " task" : " tasks") : hint || "";
     t.append(rk, nm, ct);
     if (b.kind === "project") { const x2 = document.createElement("button"); x2.className = "x"; x2.type = "button"; x2.textContent = "×"; x2.setAttribute("aria-label", "Remove " + b.name);
-      x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); } }; t.appendChild(x2); }
+      x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); autosave(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
     g.append(t, tl); world.appendChild(g); paint(g);
     return g;
@@ -663,6 +677,7 @@
     if (!act) return;
     if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) cardSheet(act.el); }
     if (act.kind === "chip" && act.moved) chipDrop();
+    if (act.moved && act.kind !== "pan") autosave();
     board.classList.remove("pan"); act = null;
   };
   function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") act.el.classList.remove("lift"); board.classList.remove("pan"); act = null; }
@@ -720,7 +735,7 @@
     const pile = gs.filter((g) => g.classList.contains("new")), slim = narrow(), up = Math.ceil(pile.length / 2) * 66 + 70;
     pile.forEach((g, i) => { g.style.left = (slim ? 0 : W + 110) + (i % 2) * 165 + Math.random() * 30 + "px"; g.style.top = (slim ? -up : 10) + Math.floor(i / 2) * 66 + Math.random() * 20 + "px"; });
     rerank(); buzz(10);
-    setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); fit(true); }, calm ? 0 : 580);
+    setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); fit(true); autosave(); }, calm ? 0 : 580);
   }
 
   async function openMap() {
@@ -733,6 +748,7 @@
       M = await r.json().catch(() => null);
       if (!r.ok || !M || !M.tasks) return fail("Couldn't open the map.", (M && M.error) || "Try again in a minute");
     }
+    loading = true; saveNote = M.unsealed ? "Not sealed yet" : "";
     groups().forEach((g) => g.remove()); closeSheet();
     // Groups: as he left them. The first time, one group (3iM, on Business) holding every client and 3iM itself.
     G = (M.groups || []).filter((x) => COLORS[x.color]).map((x) => ({ ...x })); groupOf = { ...(M.groupOf || {}) };
@@ -752,11 +768,12 @@
     legend();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
     $("mhint").classList.remove("off"); setTimeout(() => $("mhint").classList.add("off"), 6000);
-    show("map"); rerank(); fit(false);
+    show("map"); rerank(); fit(false); loading = false;
     if (!calm) groups().filter((g) => g.classList.contains("new")).forEach((g, i) => g.animate([{ opacity: 0, transform: `translateY(-40px) rotate(${(Math.random() * 40 - 20).toFixed(0)}deg) scale(.85)` }, { opacity: 1, transform: "none" }], { duration: 460, delay: 45 * i, easing: ease, fill: "backwards" }));
   }
   async function seal(reorganize) {
     $("mnext").disabled = true; $("mseal2").disabled = true; $("maperr").textContent = "";
+    clearTimeout(draftTimer); loading = true; // the seal replaces the draft
     // Whatever never left the pile is parked.
     const gs0 = groups(), fresh = gs0.filter((g) => g.classList.contains("new"));
     if (fresh.length) { fresh.forEach((g, i) => { g.classList.remove("new"); g.classList.add("tidy"); parkAt(g, i + gs0.filter((x) => x.classList.contains("parked")).length, 60); }); await new Promise((r) => setTimeout(r, calm ? 0 : 600)); fresh.forEach((g) => g.classList.remove("tidy")); }
@@ -772,13 +789,14 @@
       }
       sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it. The board stays as you left it.");
     } catch (e) { $("maperr").textContent = e.message; }
+    loading = false;
     $("mnext").disabled = false; $("mseal2").disabled = false;
   }
   $("addb").addEventListener("submit", (e) => {
     e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); $("addin").value = ""; $("addin").blur(); if (!v) return;
     if (groups().some((g) => g.dataset.name.toLowerCase() === v.toLowerCase())) return;
     const r = board.getBoundingClientRect(), g = grp({ name: v, kind: "project", count: 0 }, (r.width / 2 - V.x) / V.k - W / 2 + Math.random() * 60 - 30, (r.height / 2 - V.y) / V.k - 30 + Math.random() * 40 - 20, true, "new");
-    rerank(); if (!calm) g.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: ease });
+    rerank(); autosave(); if (!calm) g.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: ease });
   });
   $("mtasks").onclick = () => { const off = board.classList.toggle("notasks"); $("mtasks").textContent = off ? "Show tasks" : "Hide tasks"; };
   $("mtidy").onclick = tidy; $("mnext").onclick = () => seal(false); $("mseal2").onclick = () => seal(true);
