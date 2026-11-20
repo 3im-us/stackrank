@@ -80,6 +80,8 @@
   .slot { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .slot .card { flex: 1; }
   .did { align-self: flex-end; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 2px 3px; text-decoration: underline; text-underline-offset: 3px; }
   .did.sure { color: var(--orange); font-weight: 700; } .did[disabled] { opacity: .5; }
+  .under { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; } .under .did { align-self: auto; }
+  .pinbox { display: flex; gap: 6px; align-items: center; } .pinbox input { font: inherit; font-size: 16px; border: 1.5px solid var(--ink); background: var(--fog); padding: 6px 8px; border-radius: 0; color: var(--ink); }
   .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .tool { background: var(--fog); border: 1.5px solid var(--ink); padding: 14px 12px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
   .tool:active { background: var(--ink); color: var(--white); } .tool[disabled] { opacity: .35; }
@@ -328,9 +330,9 @@
       <div class="bar"><span class="mono" id="pickno">Pick 01</span><div class="track"><u id="fill"></u></div><span class="mono" id="placed"></span></div>
       <div class="q">Which one comes first?</div>
       <div class="duel">
-        <div class="slot"><button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button><button class="did" id="dA">Already did this</button></div>
+        <div class="slot"><button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pA">Pin to date</button><button class="did" id="dA">Already did this</button></div></div>
         <div class="vs"><b>VS</b></div>
-        <div class="slot"><button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button><button class="did" id="dB">Already did this</button></div>
+        <div class="slot"><button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button><div class="under"><button class="did" id="pB">Pin to date</button><button class="did" id="dB">Already did this</button></div></div>
       </div>
       <div class="tools"><button class="tool" id="undo">&larr; Undo</button><button class="tool" id="tie">Too close to call</button></div>
     </section>
@@ -440,6 +442,7 @@
     $("placed").textContent = pad(r.placed) + " / " + pad(n);
     $("fill").style.width = Math.round((r.placed / n) * 100) + "%";
     for (const b of [$("dA"), $("dB")]) { b.classList.remove("sure"); b.textContent = "Already did this"; b.disabled = false; }
+    for (const b of [$("pA"), $("pB")]) { const old = b.parentNode.querySelector(".pinbox"); if (old) old.remove(); b.hidden = false; b.disabled = false; b.textContent = "Pin to date"; }
     show("rank");
   }
 
@@ -453,6 +456,21 @@
     setTimeout(() => { el.classList.remove("pick"); picks.push(p); save(); render(); }, tie ? 0 : 130);
   }
 
+  // "Pin to date" (Zach, Nov 20): this one happens on a set day, so there's nothing to rank. He confirms the date
+  // (it starts on the day it's already on); it leaves the ranking and no repack will ever move it.
+  function pinTo(id, btn) {
+    const it = byId().get(id) || {}, box = document.createElement("span"), inp = document.createElement("input"), go = document.createElement("button");
+    box.className = "pinbox"; inp.type = "date"; inp.value = it.at ? new Date(it.at).toLocaleDateString("en-CA") : ""; go.className = "did sure"; go.textContent = "Pin";
+    box.append(inp, go); btn.hidden = true; btn.after(box);
+    go.onclick = async () => { if (!inp.value) return; go.disabled = true; go.textContent = "Pinning...";
+      try {
+        if (!demo) { const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin_id: id, date: inp.value }) });
+          if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "Couldn't pin it"); }
+        done.add(id); pending = null;
+        if (order && $("result").classList.contains("on")) { order = order.filter((x) => x !== id); if (order.length) return renderResult(); }
+        order = null; render();
+      } catch (e) { box.remove(); btn.hidden = false; btn.textContent = (e.message || "Couldn't pin it") + " Tap to retry"; } };
+  }
   // "Already did this": tap twice. It comes off the calendar and is logged as done right then, and leaves the ranking.
   async function markDone(id, btn) {
     if (!btn.classList.contains("sure")) { btn.classList.add("sure"); btn.textContent = "Tap again: done, take it off my calendar"; setTimeout(() => { if (btn.isConnected && !btn.disabled) { btn.classList.remove("sure"); btn.textContent = "Already did this"; } }, 4000); return; }
@@ -483,13 +501,14 @@
       sel.value = minsOf(it); sel.classList.toggle("set", minsOf(it) !== it.minutes);
       sel.onchange = () => { const v = +sel.value; if (v === it.minutes) delete mins[id]; else mins[id] = v; save(); renderResult(); };
       const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
+      const pn = document.createElement("button"); pn.className = "did"; pn.textContent = "Pin to date"; pn.onclick = () => pinTo(id, pn);
       const cur = dues[id] !== undefined ? dues[id] : (it.due || "");
       const due = document.createElement("label"); due.className = "due" + (cur ? " set" : ""); due.append("Due");
       const di = document.createElement("input"); di.type = "date"; di.value = cur; di.setAttribute("aria-label", "Due date");
       di.onchange = () => { if (di.value === (it.due || "")) delete dues[id]; else dues[id] = di.value; save(); renderResult(); };
       due.appendChild(di);
       if (cur) { const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Clear due date"); x.onclick = (e) => { e.preventDefault(); if (it.due) dues[id] = ""; else delete dues[id]; save(); renderResult(); }; due.appendChild(x); }
-      ctl.append(sel, due, dn); t.appendChild(ctl);
+      ctl.append(sel, due, pn, dn); t.appendChild(ctl);
       const mv = document.createElement("div"); mv.className = "mv";
       for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down"); b.disabled = i + d < 0 || i + d >= order.length;
         b.onclick = () => { [order[i], order[i + d]] = [order[i + d], order[i]]; renderResult(); }; mv.appendChild(b); }
@@ -1214,6 +1233,7 @@
 
   $("start").onclick = render;
   $("A").onclick = () => choose(0); $("B").onclick = () => choose(1);
+  $("pA").onclick = () => pending && pinTo(pending[0], $("pA")); $("pB").onclick = () => pending && pinTo(pending[1], $("pB"));
   $("dA").onclick = () => pending && markDone(pending[0], $("dA")); $("dB").onclick = () => pending && markDone(pending[1], $("dB"));
   $("tie").onclick = () => choose(0, true);
   $("undo").onclick = () => { if (picks.length) { picks.pop(); order = null; save(); render(); } };
