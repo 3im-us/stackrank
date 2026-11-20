@@ -522,6 +522,8 @@
   const STEPS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360, 480];
 
   function renderResult() {
+    // A change on the list (a length, a due date, an arrow) redraws it; he stays where he was instead of jumping to the top.
+    const keepY = $("result").classList.contains("on") ? window.scrollY : null;
     const m = byId(), list = $("list"); list.innerHTML = "";
     order.forEach((id, i) => {
       const it = m.get(id), row = document.createElement("div"); row.className = "row";
@@ -555,6 +557,7 @@
     $("total").textContent = hm(order.reduce((a, x) => a + minsOf(m.get(x)), 0)) + " of work";
     $("senderr").textContent = "";
     show("result");
+    if (keepY !== null) window.scrollTo(0, keepY);
   }
 
   async function send() {
