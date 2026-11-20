@@ -840,7 +840,11 @@
     if (sAct.kind === "pan") { SV.x = sAct.vx + dx; SV.y = sAct.vy + dy; sView(); }
     else if (sAct.kind === "grp") { sAct.el.style.left = sAct.gx + dx / SV.k + "px"; sAct.el.style.top = sAct.gy + dy / SV.k + "px"; }
     else if (sAct.kind === "chip") { sAct.ghost.style.left = e.clientX - sAct.ox + "px"; sAct.ghost.style.top = e.clientY - sAct.oy + "px";
-      const over = document.elementFromPoint(e.clientX, e.clientY), g = over && over.closest(".sworld .grp"); spaceEl.querySelectorAll(".grp.drop").forEach((x) => x !== g && x.classList.remove("drop")); if (g) g.classList.add("drop"); }
+      const over = document.elementFromPoint(e.clientX, e.clientY), g = over && over.closest(".sworld .grp"); spaceEl.querySelectorAll(".grp.drop").forEach((x) => x !== g && x.classList.remove("drop")); if (g) g.classList.add("drop");
+      // Over an open card it slots in where he's holding it, so tasks reorder within a Project and move between them.
+      if (g && !g.dataset.shut) { const zone = g.querySelector(".tasks"); let before = zone.querySelector(".padd");
+        for (const c of zone.querySelectorAll(".chip")) { if (c === sAct.el) continue; const r = c.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { before = c; break; } }
+        if (!(sAct.el.parentNode === zone && sAct.el.nextElementSibling === before)) { zone.insertBefore(sAct.el, before); buzz(4); } } }
   });
   const sUp = (e) => {
     sPts.delete(e.pointerId); if (sPts.size < 2) sPinch = null;
@@ -855,9 +859,17 @@
     if (A.kind === "chip") { const id = +A.el.dataset.id, t = A.el.dataset.kind === "item" ? M.items.find((i) => i.id === id) : taskOf(id);
       if (!A.moved) { if (t) taskSheet(t); return; }
       A.ghost.remove(); A.el.classList.remove("hold"); const g = spaceEl.querySelector(".grp.drop"); if (g) g.classList.remove("drop");
-      if (!g || !t) return; const to = +g.dataset.pid || null, was = M.projects.some((p) => p.id === t.project_id && p.space === name) ? t.project_id : null;
-      if (to === was) return; t.project_id = to; buzz(8); renderSpace();
-      spCall({ op: "edit_task", id: t.id, kind: t.kind || "task", project_id: to }).catch((err) => { t.project_id = was; say(err.message); renderSpace(); }); }
+      if (!t) return renderSpace();
+      if (g && g.dataset.shut && A.el.closest(".grp") !== g) g.querySelector(".tasks").insertBefore(A.el, g.querySelector(".padd")); // onto a folded card: filed at the end
+      const card = A.el.closest(".grp"), to = +card.dataset.pid || null, was = M.projects.some((p) => p.id === t.project_id && p.space === name) ? t.project_id : null;
+      const seq = [...card.querySelectorAll(".chip")].filter((c) => !c.classList.contains("wait") && !c.classList.contains("bad"));
+      t.project_id = to; buzz(8);
+      // The new order: real tasks follow the order of their chips on the map; map-only things keep a position of their own.
+      const tids = seq.filter((c) => c.dataset.kind !== "item").map((c) => +c.dataset.id), iids = seq.filter((c) => c.dataset.kind === "item").map((c) => +c.dataset.id);
+      const box = SP.querySelector(".tasks"); for (const id of tids) { const c = box.querySelector(`.chip[data-id="${id}"]`); if (c) box.appendChild(c); }
+      if (iids.length) { iids.forEach((id, k) => { const it = M.items.find((i) => i.id === id); if (it) it.pos = k; }); M.items.sort((x, y) => x.pos - y.pos); if (!demo) spCall({ op: "order_items", ids: iids }).catch(() => {}); }
+      autosave(); renderSpace();
+      if (to !== was) spCall({ op: "edit_task", id: t.id, kind: t.kind || "task", project_id: to }).catch((err) => { t.project_id = was; say(err.message); renderSpace(); }); }
   };
   spaceEl.addEventListener("pointerup", sUp); spaceEl.addEventListener("pointercancel", sUp);
   spaceEl.addEventListener("wheel", (e) => { const sb = e.target.closest(".sboard"); if (!sb) return; e.preventDefault(); const r = sb.getBoundingClientRect();
@@ -884,6 +896,9 @@
       di = document.createElement("input"); di.type = "date"; di.value = t.dueDay || ""; two.append(field("Minutes", mi), field("Due", di)); sheet.appendChild(two); }
     const ps = document.createElement("select"); for (const p of [null, ...projects]) { const o = document.createElement("option"); o.value = p ? p.id : ""; o.textContent = p ? p.name : "No project"; ps.appendChild(o); }
     ps.value = projects.some((p) => p.id === t.project_id) ? t.project_id : ""; sheet.appendChild(field("Project", ps));
+    // Move to another Space. A map-only thing can only go to a Space that isn't 3iM work.
+    const ms = document.createElement("select"); for (const g of groups().filter((g) => t.kind !== "item" || g.dataset.kind !== "client").sort((x, y) => x.dataset.name.localeCompare(y.dataset.name))) { const o = document.createElement("option"); o.value = o.textContent = g.dataset.name; ms.appendChild(o); }
+    ms.value = name; sheet.appendChild(field("Move to Space", ms));
     const acts = document.createElement("div"); acts.className = "acts";
     const act = (label, fn, twice) => { const b = document.createElement("button"); b.className = "did"; b.textContent = label; let armed = !twice;
       b.onclick = async () => { if (!armed) { armed = true; b.textContent = "Tap again to confirm"; return; } b.disabled = true; say(""); try { await fn(); } catch (e) { say(e.message); } closeSheet(); renderSpace(); }; acts.appendChild(b); };
@@ -897,10 +912,16 @@
       if (v && v !== t.title) op.title = v;
       if (mi && +mi.value >= 5 && +mi.value !== t.minutes) op.minutes = Math.round(+mi.value);
       if (di && di.value !== (t.dueDay || "")) op.due = di.value;
-      if (pj !== (projects.some((p) => p.id === t.project_id) ? t.project_id : null)) op.project_id = pj;
+      const moving = ms.value && ms.value !== name;
+      if (moving) { op.space = ms.value; op.project_id = null; }
+      else if (pj !== (projects.some((p) => p.id === t.project_id) ? t.project_id : null)) op.project_id = pj;
       closeSheet(); if (Object.keys(op).length === 3) return;
       say("");
-      try { const r = await spCall(op); if (r.task) putTask(r.task); else if (r.item) M.items = M.items.map((i) => (i.id === t.id ? r.item : i)); } catch (e) { say(e.message); }
+      try { const r = await spCall(op);
+        if (r.task) { if (moving) { const c = world.querySelector(`.chip[data-id="${t.id}"]`); if (c) c.remove(); r.task.bucket = ms.value; r.task.project_id = null; } putTask(r.task); }
+        else if (r.item) M.items = M.items.map((i) => (i.id === t.id ? (moving ? { ...r.item, space: ms.value, project_id: null } : r.item) : i));
+        if (moving) { counts(); say(`Moved to ${ms.value}.`); }
+      } catch (e) { say(e.message); }
       renderSpace();
     };
     h.querySelector("button").textContent = "Save"; h.querySelector("button").onclick = save; ti.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
@@ -927,7 +948,18 @@
     const acts = document.createElement("div"); acts.className = "acts";
     const i = projects.indexOf(p), mv = (d, label) => { if (i + d < 0 || i + d >= projects.length) return; const b = document.createElement("button"); b.className = "did"; b.textContent = label;
       b.onclick = async () => { const o = projects.slice(); o.splice(i, 1); o.splice(i + d, 0, p); o.forEach((x, k) => (x.pos = k)); closeSheet(); renderSpace(); try { await spCall({ op: "order_projects", ids: o.map((x) => x.id) }); } catch (e) { say(e.message); } }; acts.appendChild(b); };
-    mv(-1, "Move up"); mv(1, "Move down");
+    // Move the whole Project (and what's under it) to another Space of the same kind: 3iM work stays among 3iM Spaces.
+    const name = SP.dataset.name, kind = SP.dataset.kind, ms = document.createElement("select");
+    for (const g of groups().filter((g) => g.dataset.kind === kind || (kind !== "client" && g.dataset.kind !== "client")).sort((x, y) => x.dataset.name.localeCompare(y.dataset.name))) { const o = document.createElement("option"); o.value = o.textContent = g.dataset.name; ms.appendChild(o); }
+    ms.value = name; sheet.appendChild(field("Move to Space", ms));
+    ms.onchange = async () => { const to = ms.value; if (to === name) return; closeSheet();
+      try { await spCall({ op: "move_project", id: p.id, space: to });
+        p.space = to; delete p.x; delete p.y; const dest = groups().find((g) => g.dataset.name === to);
+        for (const t of M.tasks) if (t.project_id === p.id) { t.bucket = to; const c = world.querySelector(`.chip[data-id="${t.id}"]`); if (c && dest) dest.querySelector(".tasks").appendChild(c); }
+        for (const i of M.items) if (i.project_id === p.id) i.space = to;
+        counts(); autosave(); say(`${p.name} moved to ${to}.`);
+      } catch (e) { say(e.message); }
+      renderSpace(); };
     const del = document.createElement("button"); del.className = "did"; del.textContent = "Delete project (tasks stay)"; let armed = false;
     del.onclick = async () => { if (!armed) { armed = true; del.textContent = "Tap again to confirm"; return; } closeSheet();
       try { await spCall({ op: "delete_project", id: p.id }); M.projects = M.projects.filter((x) => x.id !== p.id); for (const t of [...M.tasks, ...M.items]) if (t.project_id === p.id) t.project_id = null; } catch (e) { say(e.message); } renderSpace(); };
@@ -1050,10 +1082,8 @@
   }
   function chipMove(e) {
     act.g.style.left = e.clientX - act.ox + "px"; act.g.style.top = e.clientY - act.oy + "px";
-    let zone = null, best = 1e9;
-    for (const g of groups()) { if (g.classList.contains("new") || g.classList.contains("parked")) continue; const r = g.getBoundingClientRect();
-      const dx = e.clientX < r.left ? r.left - e.clientX : e.clientX > r.right ? e.clientX - r.right : 0, dy = e.clientY < r.top ? r.top - e.clientY : e.clientY > r.bottom ? e.clientY - r.bottom : 0, d = Math.hypot(dx, dy);
-      if (d < best) { best = d; zone = g.querySelector(".tasks"); } }
+    // A task is dragged within its own Space (into a Project, or to reorder). Another Space is "Move to" on the task.
+    const home = act.home || (act.home = act.el.closest(".grp")), zone = home && home.querySelector(".tasks");
     if (!zone) return;
     let before = null;
     for (const c of zone.children) { if (c === act.el) continue; const r = c.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { before = c; break; } }
