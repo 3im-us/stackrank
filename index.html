@@ -119,52 +119,61 @@
   .maprow:active { background: var(--ink); color: var(--white); }
   .word { cursor: pointer; }
 
-  /* Priority map */
+  /* Priority map: a board you pan and zoom. Higher on the board = more on his mind. */
+  body.wide .wrap { max-width: none; }
   #map { gap: 10px; }
-  .mbar { display: flex; justify-content: space-between; gap: 10px; }
-  .mq { font-size: clamp(26px, 5.4vw, 44px); min-height: 2.1em; }
-  .lbl { display: flex; justify-content: space-between; gap: 10px; padding: 10px 2px 0; } .lbl span { opacity: .55; }
-  .pile { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 4px; padding: 14px 8px 18px; min-height: 96px; background: var(--white); position: relative; overflow: hidden; transition: min-height .4s, padding .4s, opacity .4s; }
-  .pile:empty { min-height: 0; padding: 0 8px; opacity: 0; }
-  .node { position: relative; touch-action: manipulation; }
-  .tile { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; background: var(--white); cursor: grab; user-select: none; -webkit-user-select: none; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; }
-  .node:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
-  .node:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
-  .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 22px; overflow-wrap: anywhere; }
-  .tile .rk { color: var(--orange); font-size: 13px; letter-spacing: .12em; min-width: 22px; }
-  .tile .ct { opacity: .6; white-space: nowrap; }
-  .grip { touch-action: none; cursor: grab; padding: 8px 6px; margin: -8px -4px -8px 0; font-family: var(--mono); font-size: 16px; letter-spacing: -2px; opacity: .45; }
-  .tile .x { font-family: var(--mono); font-size: 14px; padding: 4px 6px; opacity: .6; }
-  .pile .node { margin: -3px; transform: rotate(var(--rot, 0deg)) translateY(var(--ty, 0px)); z-index: var(--z, 1); }
-  .pile .tile { padding: 10px 14px; gap: 8px; box-shadow: 0 1px 0 rgba(29,29,27,.12); background: var(--fog); }
-  .pile .node:nth-child(4n+1) .tile { background: var(--pink); } .pile .node:nth-child(4n+3) .tile { background: var(--ink); color: var(--white); }
-  .pile .tile b { font-size: 18px; } .pile .rk, .pile .grip, .pile .tasks, .tray .tasks { display: none; }
-  .col, .tray { display: flex; flex-direction: column; gap: 8px; min-height: 64px; padding: 2px 0; }
-  .col:empty::after, .tray:empty::after { content: attr(data-empty); font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .5; border: 1.5px dashed rgba(29,29,27,.35); border-radius: 18px; padding: 20px 16px; }
-  .col .node.r1 > .tile { background: var(--orange); padding-top: 20px; padding-bottom: 20px; } .col .node.r1 > .tile b { font-size: 32px; } .col .node.r1 .rk { color: var(--ink); }
-  .col .node.r2 > .tile { background: var(--ink); color: var(--white); padding-top: 17px; padding-bottom: 17px; } .col .node.r2 > .tile b { font-size: 27px; }
-  .col .node.r3 > .tile b { font-size: 24px; }
-  .tray .tile { background: transparent; border: 1.5px solid rgba(29,29,27,.35); opacity: .7; } .tray .tile b { font-size: 18px; } .tray .rk { display: none; }
-  .hold { opacity: .22; } .ghost { box-shadow: 0 14px 30px rgba(29,29,27,.22); border-radius: 20px; cursor: grabbing; } .ghost .tasks { display: none; }
-  .tasks { display: none; flex-direction: column; gap: 5px; margin: 6px 0 4px 26px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); min-height: 30px; }
-  #map.p2 .col .tasks { display: flex; } #map.p2 .pile, #map.p2 .add, #map.p2 #mpark { display: none; }
-  .col .tasks:empty::after { content: "Drop a task here"; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .45; padding: 6px 0; }
-  .chip { position: relative; display: flex; align-items: center; gap: 8px; background: var(--white); padding: 9px 8px 9px 12px; border-radius: 12px 14px 12px 15px; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .board { position: relative; flex: 1; min-height: 440px; height: calc(100dvh - 250px); overflow: hidden; background-color: #ECEAEB; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
+  .board.pan { cursor: grabbing; }
+  .world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+  .parkline { position: absolute; left: -6000px; width: 12000px; height: 0; border-top: 2px dashed rgba(29,29,27,.4); cursor: ns-resize; }
+  .parkline::before { content: ""; position: absolute; left: 0; right: 0; top: -14px; height: 28px; }
+  .parkline::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6000px; background: rgba(29,29,27,.05); pointer-events: none; }
+  .parkline span { position: absolute; left: 5700px; top: 10px; white-space: nowrap; font-size: 13px; opacity: .6; }
+  .grp { position: absolute; width: 300px; z-index: 2; }
+  .grp.tidy { transition: left .55s cubic-bezier(.2,.85,.2,1), top .55s cubic-bezier(.2,.85,.2,1); }
+  .grp.lift { z-index: 9; }
+  .tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 16px; background: var(--white); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
+  .grp:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
+  .grp:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
+  .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 23px; overflow-wrap: anywhere; }
+  .tile .rk { color: var(--orange); font-size: 12px; letter-spacing: .12em; min-width: 20px; }
+  .tile .ct { opacity: .6; white-space: nowrap; font-size: 10px; }
+  .tile .x { font-family: var(--mono); font-size: 15px; padding: 2px 6px; opacity: .6; }
+  .grp.new { width: max-content; max-width: 300px; }
+  .grp.new > .tile { transform: rotate(var(--rot, 0deg)); padding: 12px 15px; background: var(--fog); box-shadow: 0 2px 0 rgba(29,29,27,.18); }
+  .grp.new:nth-child(4n+1) > .tile { background: var(--pink); } .grp.new:nth-child(4n+3) > .tile { background: var(--ink); color: var(--white); }
+  .grp.r1 > .tile { background: var(--orange); transform: scale(1.14); } .grp.r1 .rk { color: var(--ink); }
+  .grp.r2 > .tile { background: var(--ink); color: var(--white); transform: scale(1.08); }
+  .grp.r3 > .tile { transform: scale(1.03); }
+  .grp.parked > .tile { background: transparent; box-shadow: none; outline: 1.5px solid rgba(29,29,27,.35); opacity: .75; } .grp.parked .rk { display: none; }
+  .grp.lift > .tile { box-shadow: 0 16px 34px rgba(29,29,27,.24); cursor: grabbing; }
+  .tasks { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 0 22px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); }
+  .grp.r1 > .tasks { margin-top: 16px; } .grp.r2 > .tasks { margin-top: 13px; }
+  .board.notasks .tasks, .grp.new .tasks, .grp.parked .tasks { display: none; }
+  .tasks:empty { display: none; } .board.dragchip .grp:not(.new):not(.parked) .tasks:empty { display: flex; min-height: 30px; }
+  .board.dragchip .tasks:empty::after { content: "Drop it here"; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; opacity: .5; padding: 7px 0; }
+  .chip { position: relative; display: flex; align-items: baseline; gap: 8px; background: var(--white); padding: 8px 10px 8px 11px; border-radius: 12px 14px 12px 15px; cursor: grab; }
   .chip::before { content: ""; position: absolute; left: -14px; top: 50%; width: 14px; border-top: 1.5px solid var(--ink); }
-  .chip .ctitle { flex: 1; font-weight: 500; font-size: 15.5px; letter-spacing: -.012em; line-height: 1.15; overflow-wrap: anywhere; }
-  .chip small { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; opacity: .55; white-space: nowrap; }
+  .chip .ctitle { flex: 1; font-weight: 500; font-size: 14px; letter-spacing: -.01em; line-height: 1.15; overflow-wrap: anywhere; }
+  .chip small { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; text-transform: uppercase; opacity: .55; white-space: nowrap; }
+  .hold { opacity: .22; } .ghost { box-shadow: 0 14px 30px rgba(29,29,27,.22); cursor: grabbing; transform-origin: 0 0; }
+  .axis { position: absolute; left: 10px; top: 12px; bottom: 12px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; opacity: .6; }
+  .axis span:first-child::before { content: "\2191  "; } .axis span:last-child::before { content: "\2193  "; }
+  .hud { position: absolute; display: flex; gap: 2px; }
+  .hud.count { right: 10px; top: 10px; background: var(--white); padding: 7px 10px; pointer-events: none; }
+  .hud.zoom { right: 10px; bottom: 10px; } .hud.zoom button { background: var(--white); min-width: 40px; height: 40px; font-size: 18px; } .hud.zoom button.mono { font-size: 11px; padding: 0 12px; } .hud.zoom button:active { background: var(--ink); color: var(--white); }
+  .hint { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%); background: var(--ink); color: var(--white); padding: 9px 14px; white-space: nowrap; pointer-events: none; transition: opacity .5s; max-width: calc(100% - 130px); overflow: hidden; text-overflow: ellipsis; }
+  .hint.off { opacity: 0; }
   .add { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
   .add input { font: inherit; font-size: 16px; border: 1.5px solid var(--ink); background: var(--fog); padding: 12px 14px; border-radius: 0; min-width: 0; color: var(--ink); }
   .add input::placeholder { color: rgba(29,29,27,.5); }
-  .mact { display: grid; gap: 10px; margin-top: 8px; }
-  #mseal2 { display: none; } #map.p2 #mseal2 { display: block; }
+  .mact { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; } .mact .add, .mact .cta { grid-column: 1 / -1; } .mact .tool { padding: 12px 6px; font-size: 11px; }
 
   @media (min-width: 820px) {
     #home.on { display: grid; grid-template-columns: 1fr 1.2fr; align-items: start; } #home .hero { min-height: 380px; grid-row: span 2; }
     .scope { padding: 20px 24px; } .maprow { padding: 28px 24px; }
-    #map { max-width: 760px; width: 100%; margin: 0 auto; }
-    .tile b { font-size: 24px; } .col .node.r1 > .tile b { font-size: 40px; } .col .node.r2 > .tile b { font-size: 32px; } .col .node.r3 > .tile b { font-size: 27px; }
-    .mact { grid-template-columns: auto 1fr; } #map.p2 .mact { grid-template-columns: 1fr 1fr; }
+    .board { height: calc(100dvh - 300px); min-height: 480px; } .hint { bottom: 14px; }
+    .mact { grid-template-columns: 1.4fr auto auto auto 1fr; align-items: stretch; } .mact .add, .mact .cta { grid-column: auto; }
     .wrap { padding: 28px; gap: 16px; } main, .screen { gap: 16px; }
     header { min-height: 96px; grid-template-columns: 1fr auto 64px 64px; } header .word { font-size: 68px; padding: 12px 24px 16px; }
     .mark { width: 34px; height: 57px; }
@@ -208,18 +217,19 @@
 
     <!-- Priority map -->
     <section class="screen" id="map">
-      <div class="mbar"><span class="mono" id="mstep">01 / Empty your head</span><span class="mono" id="mleft"></span></div>
-      <h1 class="mq" id="mq"></h1>
-      <div class="pile" id="pile"></div>
-      <form class="add" id="addb"><input id="addin" placeholder="Something else on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
-      <div class="mono lbl">The map <span>Top = most on your mind</span></div>
-      <div class="col" id="col" data-empty="Tap whatever is most on your mind"></div>
-      <div class="mono lbl">Not on my mind right now</div>
-      <div class="tray" id="tray" data-empty="Drag here to park something"></div>
+      <div class="board" id="board">
+        <div class="world" id="world"><div class="parkline" id="parkline"><span class="mono">Not on my mind below this line (drag the line)</span></div></div>
+        <div class="axis mono"><span>Most on my mind</span><span>Less</span></div>
+        <div class="hud count mono" id="mleft"></div>
+        <div class="hud zoom"><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
+        <div class="hint mono" id="mhint">Drag things up or down. Pinch or scroll to zoom.</div>
+      </div>
       <div class="mact">
-        <button class="tool" id="mpark">Park the rest</button>
-        <button class="cta" id="mnext"><span>Next: the tasks</span><span class="mono" id="mnextn"></span></button>
-        <button class="tool" id="mseal2">Seal it and reorganize my week</button>
+        <form class="add" id="addb"><input id="addin" placeholder="Something else on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
+        <button class="tool" id="mtasks">Hide tasks</button>
+        <button class="tool" id="mtidy">Tidy up</button>
+        <button class="tool" id="mseal2">Seal + redo my week</button>
+        <button class="cta" id="mnext"><span>Seal the map</span><span class="mono" id="mnextn"></span></button>
       </div>
       <p class="mono err" id="maperr"></p>
     </section>
@@ -284,7 +294,7 @@
   const qs = new URLSearchParams(location.search), demo = qs.has("demo");
   let token = qs.get("t");
   const $ = (id) => document.getElementById(id);
-  const show = (id) => { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); window.scrollTo(0, 0); };
+  const show = (id) => { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); document.body.classList.toggle("wide", id === "map"); window.scrollTo(0, 0); };
   const pad = (n) => String(n).padStart(2, "0");
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
@@ -502,114 +512,158 @@
   }
 
   // ---------- Priority map ----------
-  // Everything starts in a messy pile. He taps whatever is most on his mind and it flies into the map and straightens;
-  // then the next thing, until his head is clear. Then the tasks appear under each bucket to order or move.
-  let M = null, drag = null, justDragged = false;
-  const pile = $("pile"), col = $("col"), tray = $("tray");
-  function node(b, hint) {
-    const n = document.createElement("div"); n.className = "node"; n.dataset.name = b.name; n.dataset.kind = b.kind;
-    n.style.setProperty("--rot", (Math.random() * 13 - 6.5).toFixed(1) + "deg"); n.style.setProperty("--ty", (Math.random() * 12 - 4).toFixed(0) + "px"); n.style.setProperty("--z", String(1 + Math.floor(Math.random() * 5)));
+  // A board he pans and zooms, like a design canvas. Every bucket is a card he drags anywhere; how high it sits is how
+  // much it's on his mind, and anything below the dashed line is parked. New things arrive tilted in a loose pile and
+  // straighten the moment he picks them up. His tasks hang under each bucket and can be reordered or moved across.
+  let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760;
+  const board = $("board"), world = $("world"), parkline = $("parkline"), W = 300;
+  const groups = () => [...world.querySelectorAll(".grp")];
+  const gx = (g) => parseFloat(g.style.left) || 0, gy = (g) => parseFloat(g.style.top) || 0;
+  function view() { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; const d = 30 * V.k; board.style.backgroundSize = d + "px " + d + "px"; board.style.backgroundPosition = V.x + "px " + V.y + "px"; }
+  function zoomAt(cx, cy, k) { k = Math.max(.2, Math.min(2.2, k)); V.x = cx - (cx - V.x) * (k / V.k); V.y = cy - (cy - V.y) * (k / V.k); V.k = k; view(); }
+  function fit(animate) {
+    const gs = groups(); if (!gs.length) return;
+    const r = board.getBoundingClientRect();
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const g of gs) { x0 = Math.min(x0, gx(g)); y0 = Math.min(y0, gy(g)); x1 = Math.max(x1, gx(g) + W * 1.15); y1 = Math.max(y1, gy(g) + g.offsetHeight); }
+    y1 = Math.max(y1, parkY + 110); y0 = Math.min(y0, parkY - 200);
+    if (!gs.some((g) => !g.classList.contains("new") && gy(g) < parkY)) y0 -= 240; // nothing placed yet: leave room above the pile to build upward
+    const pad = r.width < 600 ? 34 : 70, k = Math.max(.2, Math.min(1.15, (r.width - pad * 2) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)));
+    // Never so far out that nothing can be read: past that, show the top of the map and let him pan.
+    const floor = r.width < 600 ? .5 : .4, kk = Math.max(k, floor);
+    const to = kk > k ? { k: kk, x: r.width / 2 - ((x0 + x1) / 2) * kk, y: pad - y0 * kk } : { k, x: r.width / 2 - ((x0 + x1) / 2) * k, y: r.height / 2 - ((y0 + y1) / 2) * k };
+    if (!animate || calm) { V = to; return view(); }
+    const from = { ...V }, t0 = performance.now();
+    (function step(t) { const p = Math.min(1, (t - t0) / 480), e = 1 - Math.pow(1 - p, 3); V = { k: from.k + (to.k - from.k) * e, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e }; view(); if (p < 1) requestAnimationFrame(step); })(t0);
+  }
+  // Rank is simply height on the board, re-read every time something moves.
+  function rerank() {
+    parkline.style.top = parkY + "px";
+    const gs = groups(), live = gs.filter((g) => !g.classList.contains("new") && gy(g) < parkY).sort((a, b) => gy(a) - gy(b) || gx(a) - gx(b));
+    for (const g of gs) { const i = live.indexOf(g), keep = ["grp", g.classList.contains("new") ? "new" : "", g.classList.contains("lift") ? "lift" : "", g.classList.contains("tidy") ? "tidy" : ""];
+      g.className = [...keep, i >= 0 && i < 3 ? "r" + (i + 1) : "", i < 0 && !g.classList.contains("new") ? "parked" : ""].filter(Boolean).join(" ");
+      g.querySelector(".rk").textContent = i >= 0 ? pad(i + 1) : ""; }
+    const fresh = gs.filter((g) => g.classList.contains("new")).length;
+    $("mleft").textContent = fresh ? pad(fresh) + " still in the pile" : pad(live.length) + " on the map";
+    $("mnext").disabled = !live.length; $("mseal2").disabled = !live.length;
+    $("mnextn").textContent = fresh ? "+ parks " + fresh : "";
+    return live;
+  }
+  function grp(b, x, y, fresh, hint) {
+    const g = document.createElement("div"); g.className = "grp" + (fresh ? " new" : ""); g.dataset.name = b.name;
+    g.style.left = x + "px"; g.style.top = y + "px"; g.style.setProperty("--rot", (Math.random() * 16 - 8).toFixed(1) + "deg");
     const t = document.createElement("div"); t.className = "tile";
     const rk = document.createElement("span"); rk.className = "rk mono";
     const nm = document.createElement("b"); nm.textContent = b.name;
     const ct = document.createElement("span"); ct.className = "ct mono"; ct.textContent = b.count ? b.count + (b.count === 1 ? " task" : " tasks") : hint || "";
-    const g = document.createElement("span"); g.className = "grip"; g.textContent = "⋮⋮"; g.setAttribute("aria-hidden", "true");
-    t.append(rk, nm, ct, g);
+    t.append(rk, nm, ct);
+    if (b.kind === "project") { const x2 = document.createElement("button"); x2.className = "x"; x2.type = "button"; x2.textContent = "×"; x2.setAttribute("aria-label", "Remove " + b.name);
+      x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
-    n.append(t, tl);
-    t.addEventListener("click", () => { if (justDragged) return; if (n.parentNode === pile || n.parentNode === tray) place(n); });
-    t.addEventListener("pointerdown", (e) => arm(e, n, "node"));
-    return n;
+    g.append(t, tl); world.appendChild(g);
+    return g;
   }
   function chip(t) {
     const c = document.createElement("div"); c.className = "chip"; c.dataset.id = t.id;
-    const g = document.createElement("span"); g.className = "grip"; g.textContent = "⋮⋮"; g.setAttribute("aria-hidden", "true");
     const a = document.createElement("span"); a.className = "ctitle"; a.textContent = t.title;
-    const sm = document.createElement("small"); sm.textContent = hm(t.minutes) + (t.due ? " · due " + t.due.split(",").slice(0, 2).join(",") : "");
-    c.append(a, sm, g);
-    c.addEventListener("pointerdown", (e) => arm(e, c, "chip"));
-    return c;
+    const sm = document.createElement("small"); sm.textContent = hm(t.minutes) + (t.due ? " · due " + t.due.split(",").slice(0, 2).join(",").replace(/^\w+, /, "") : "");
+    c.append(a, sm); return c;
   }
-  // FLIP: remember where everything is, change the DOM, then animate each thing from where it was.
-  function flip(change, skip) {
-    const nodes = [...document.querySelectorAll("#map .node")], chips = [...document.querySelectorAll("#map .chip")];
-    const before = new Map([...nodes, ...chips].map((el) => [el, el.getBoundingClientRect()]));
-    change();
-    if (calm) return;
-    const moved = new Map();
-    for (const el of nodes) { const a = before.get(el), b = el.getBoundingClientRect(); const dx = a.left - b.left, dy = a.top - b.top; moved.set(el, [dx, dy]);
-      if (el !== skip && (dx || dy) && a.width) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 300, easing: ease }); }
-    for (const el of chips) { const a = before.get(el), b = el.getBoundingClientRect(); if (!a.width || !b.width || el === skip) continue;
-      const p = moved.get(el.closest(".node")) || [0, 0]; const dx = a.left - b.left - p[0], dy = a.top - b.top - p[1];
-      if (dx || dy) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 260, easing: ease }); }
+
+  // One set of pointer handlers for the whole board: drag a card, drag a task, drag the park line, pan, or pinch.
+  const pts = new Map(); let act = null, pinch = null;
+  board.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".hud, .x") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { board.setPointerCapture(e.pointerId); } catch {}
+    $("mhint").classList.add("off");
+    if (pts.size === 2) { cancelAct(); const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: V.k }; return; }
+    if (pts.size > 2) return;
+    const ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), line = e.target.closest(".parkline");
+    act = { kind: ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY };
+    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); }
+    if (act.kind === "pan") board.classList.add("pan");
+  });
+  board.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()], r = board.getBoundingClientRect(); zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d); return; }
+    if (!act) return;
+    const dx = e.clientX - act.x0, dy = e.clientY - act.y0;
+    if (!act.moved) { if (Math.hypot(dx, dy) < 5) return; act.moved = true; if (act.kind === "grp") { act.el.classList.remove("new", "tidy"); act.el.classList.add("lift"); world.appendChild(act.el); buzz(6); } if (act.kind === "chip") chipBegin(e); }
+    if (act.kind === "pan") { V.x = act.vx + dx; V.y = act.vy + dy; view(); }
+    else if (act.kind === "line") { parkY = Math.round(act.py + dy / V.k); rerank(); }
+    else if (act.kind === "grp") { act.el.style.left = act.gx + dx / V.k + "px"; act.el.style.top = act.gy + dy / V.k + "px"; const before = act.el.className; rerank(); if (act.el.className !== before) buzz(4); }
+    else if (act.kind === "chip") chipMove(e);
+  });
+  const up = (e) => {
+    pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
+    if (!act) return;
+    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); }
+    if (act.kind === "chip" && act.moved) chipDrop();
+    board.classList.remove("pan"); act = null;
+  };
+  function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") act.el.classList.remove("lift"); board.classList.remove("pan"); act = null; }
+  board.addEventListener("pointerup", up); board.addEventListener("pointercancel", up);
+  board.addEventListener("wheel", (e) => { e.preventDefault(); const r = board.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey) zoomAt(e.clientX - r.left, e.clientY - r.top, V.k * Math.exp(-e.deltaY * .012)); else { V.x -= e.deltaX; V.y -= e.deltaY; view(); } $("mhint").classList.add("off"); }, { passive: false });
+  let gk = 1; // Safari's trackpad pinch
+  board.addEventListener("gesturestart", (e) => { e.preventDefault(); gk = V.k; });
+  board.addEventListener("gesturechange", (e) => { e.preventDefault(); const r = board.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, gk * e.scale); });
+  const zoomBy = (f) => { const r = board.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, V.k * f); };
+  $("zin").onclick = () => zoomBy(1.25); $("zout").onclick = () => zoomBy(.8); $("zfit").onclick = () => fit(true);
+
+  // A task: its ghost follows the pointer while the real one waits in whichever list it would land in.
+  function chipBegin(e) {
+    const el = act.el, r = el.getBoundingClientRect(), g = el.cloneNode(true);
+    g.classList.add("ghost"); g.style.cssText += `;position:fixed;left:${r.left}px;top:${r.top}px;width:${el.offsetWidth}px;margin:0;z-index:60;pointer-events:none;transform:scale(${V.k})`;
+    document.body.appendChild(g); el.classList.add("hold"); board.classList.add("dragchip");
+    act.g = g; act.ox = e.clientX - r.left; act.oy = e.clientY - r.top; buzz(6);
   }
-  function renumber() {
-    [...col.children].forEach((n, i) => { n.className = "node" + (i < 3 ? " r" + (i + 1) : ""); n.querySelector(".rk").textContent = pad(i + 1); });
-    [...tray.children, ...pile.children].forEach((n) => { n.className = "node"; });
-    const left = pile.children.length, p2 = $("map").classList.contains("p2");
-    $("mleft").textContent = p2 ? pad(col.children.length) + " on the map" : left ? pad(left) + " still in your head" : "Head's clear";
-    $("mq").textContent = p2 ? "Now the work under each one. Drag to order it, or move it to another bucket." : !col.children.length ? "What's most on your mind? Tap it." : left ? "And after that?" : "That's everything. Drag to adjust, then go on.";
-    $("mnext").disabled = !col.children.length; $("mpark").style.visibility = left && !p2 ? "visible" : "hidden";
-    $("mnextn").textContent = p2 || !left ? "" : "Parks the other " + left;
-  }
-  // Tap: out of the pile (or back from parked) and onto the bottom of the map, straightening as it lands.
-  function place(n) {
-    const a = n.getBoundingClientRect(), rot = n.parentNode === pile ? getComputedStyle(n).getPropertyValue("--rot") || "0deg" : "0deg";
-    flip(() => col.appendChild(n), n); renumber(); buzz(8);
-    const b = n.getBoundingClientRect();
-    if (!calm) n.animate([{ transform: `translate(${a.left - b.left}px,${a.top - b.top}px) rotate(${rot}) scale(${Math.max(.5, a.width / b.width)},1)`, transformOrigin: "0 0" },
-      { transform: "translate(0,-7px) rotate(0deg) scale(1.015,1.015)", transformOrigin: "0 0", offset: .72 }, { transform: "none", transformOrigin: "0 0" }], { duration: 560, easing: ease });
-    if (col.children.length > 4) n.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
-  }
-  // Drag: mouse anywhere on a tile, touch on its grip. A ghost follows the pointer; the real thing waits in its slot.
-  function arm(e, el, type) {
-    if (drag || (e.pointerType === "mouse" ? e.button !== 0 : !e.target.closest(".grip"))) return;
-    if (type === "node" && el.parentNode === pile && e.pointerType !== "mouse") return;
-    if (e.target.closest(".x")) return;
-    e.stopPropagation();
-    const x0 = e.clientX, y0 = e.clientY;
-    const mv = (ev) => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 6) { off(); begin(ev, el, type); } };
-    const off = () => { removeEventListener("pointermove", mv); removeEventListener("pointerup", off); removeEventListener("pointercancel", off); };
-    addEventListener("pointermove", mv); addEventListener("pointerup", off); addEventListener("pointercancel", off);
-    if (e.pointerType !== "mouse") e.preventDefault();
-  }
-  function begin(e, el, type) {
-    const r = el.getBoundingClientRect(), g = el.cloneNode(true);
-    g.classList.add("ghost"); g.style.cssText += `;position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;margin:0;z-index:60;pointer-events:none;transform:none`;
-    document.body.appendChild(g); el.classList.add("hold");
-    drag = { el, type, g, ox: e.clientX - r.left, oy: e.clientY - r.top, x: e.clientX, y: e.clientY };
-    if (!calm) g.animate([{ transform: "scale(1) rotate(0deg)" }, { transform: "scale(1.03) rotate(-1.4deg)" }], { duration: 160, fill: "forwards", easing: ease });
-    buzz(6);
-    addEventListener("pointermove", onMove, { passive: false }); addEventListener("pointerup", drop); addEventListener("pointercancel", drop);
-    requestAnimationFrame(edge);
-  }
-  function onMove(e) { e.preventDefault(); drag.x = e.clientX; drag.y = e.clientY; drag.g.style.left = e.clientX - drag.ox + "px"; drag.g.style.top = e.clientY - drag.oy + "px"; settle(); }
-  function edge() { if (!drag) return; const m = 84; if (drag.y < m) scrollBy(0, -Math.ceil((m - drag.y) / 5)); else if (drag.y > innerHeight - m) scrollBy(0, Math.ceil((drag.y - (innerHeight - m)) / 5)); settle(); requestAnimationFrame(edge); }
-  function settle() {
-    const zones = drag.type === "node" ? [col, tray] : [...col.querySelectorAll(".tasks")];
+  function chipMove(e) {
+    act.g.style.left = e.clientX - act.ox + "px"; act.g.style.top = e.clientY - act.oy + "px";
     let zone = null, best = 1e9;
-    for (const z of zones) { if (drag.type === "chip" && z.closest(".node") === null) continue; const r = z.getBoundingClientRect(); const d = drag.y < r.top ? r.top - drag.y : drag.y > r.bottom ? drag.y - r.bottom : 0; if (d < best) { best = d; zone = z; } }
+    for (const g of groups()) { if (g.classList.contains("new") || g.classList.contains("parked")) continue; const r = g.getBoundingClientRect();
+      const dx = e.clientX < r.left ? r.left - e.clientX : e.clientX > r.right ? e.clientX - r.right : 0, dy = e.clientY < r.top ? r.top - e.clientY : e.clientY > r.bottom ? e.clientY - r.bottom : 0, d = Math.hypot(dx, dy);
+      if (d < best) { best = d; zone = g.querySelector(".tasks"); } }
     if (!zone) return;
-    const sel = drag.type === "node" ? ".node" : ".chip";
     let before = null;
-    for (const s of zone.children) { if (s === drag.el || !s.matches(sel)) continue; const r = s.getBoundingClientRect(); if (drag.y < r.top + r.height / 2) { before = s; break; } }
-    if (drag.el.parentNode === zone && (before ? drag.el.nextElementSibling === before : drag.el === zone.lastElementChild)) return;
-    flip(() => zone.insertBefore(drag.el, before), drag.el); renumber(); buzz(4);
+    for (const c of zone.children) { if (c === act.el) continue; const r = c.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { before = c; break; } }
+    if (act.el.parentNode === zone && (before ? act.el.nextElementSibling === before : act.el === zone.lastElementChild)) return;
+    const chips = [...world.querySelectorAll(".chip")].filter((c) => c !== act.el), was = new Map(chips.map((c) => [c, c.getBoundingClientRect()]));
+    zone.insertBefore(act.el, before); buzz(4);
+    if (!calm) for (const c of chips) { const a = was.get(c), b = c.getBoundingClientRect(), dx = (a.left - b.left) / V.k, dy = (a.top - b.top) / V.k; if (dx || dy) c.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 240, easing: ease }); }
+    counts();
   }
-  function drop() {
-    removeEventListener("pointermove", onMove); removeEventListener("pointerup", drop); removeEventListener("pointercancel", drop);
-    const d = drag; drag = null; if (!d) return;
-    justDragged = true; setTimeout(() => { justDragged = false; }, 60);
-    const to = d.el.getBoundingClientRect(), from = d.g.getBoundingClientRect();
-    const done = () => { d.g.remove(); d.el.classList.remove("hold"); };
+  function chipDrop() {
+    const el = act.el, g = act.g, to = el.getBoundingClientRect(), from = g.getBoundingClientRect();
+    const done = () => { g.remove(); el.classList.remove("hold"); board.classList.remove("dragchip"); };
     if (calm) return done();
-    d.g.animate([{ transform: "scale(1.03) rotate(-1.4deg)" }, { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(1) rotate(0deg)` }], { duration: 220, easing: ease, fill: "forwards" }).onfinish = done;
-    renumber();
+    g.animate([{ transform: `scale(${V.k})` }, { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(${V.k})` }], { duration: 200, easing: ease, fill: "forwards" }).onfinish = done;
+  }
+  function counts() { for (const g of groups()) { const n = g.querySelectorAll(".chip").length, ct = g.querySelector(".ct"); if (n || /task/.test(ct.textContent)) ct.textContent = n ? n + (n === 1 ? " task" : " tasks") : ""; } }
+
+  const narrow = () => board.getBoundingClientRect().width < 600;
+  const parkAt = (g, i, gap) => { const per = narrow() ? 1 : 3; g.style.left = (i % per) * (W + 26) + "px"; g.style.top = parkY + gap + Math.floor(i / per) * 78 + "px"; };
+  // Tidy up: everything on the map slides into one clean column in its current order, the parked row lines up under
+  // the line, and the view re-fits. The satisfying part.
+  function tidy() {
+    const live = rerank(), gs = groups(); let y = 0;
+    for (const g of gs) g.classList.add("tidy");
+    for (const g of live) { g.style.left = "0px"; g.style.top = y + "px"; y += g.offsetHeight + (g.classList.contains("r1") ? 40 : 30); }
+    parkY = Math.max(y + 50, 300);
+    const rest = gs.filter((g) => !live.includes(g) && !g.classList.contains("new"));
+    rest.forEach((g, i) => parkAt(g, i, 60));
+    // The pile steps aside, still a pile: beside the column on a wide board, above it on a phone.
+    const pile = gs.filter((g) => g.classList.contains("new")), slim = narrow(), up = Math.ceil(pile.length / 2) * 66 + 70;
+    pile.forEach((g, i) => { g.style.left = (slim ? 0 : W + 110) + (i % 2) * 165 + Math.random() * 30 + "px"; g.style.top = (slim ? -up : 10) + Math.floor(i / 2) * 66 + Math.random() * 20 + "px"; });
+    rerank(); buzz(10);
+    setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); fit(true); }, calm ? 0 : 580);
   }
 
   async function openMap() {
     $("scope").textContent = "Priority map"; $("maperr").textContent = "";
-    if (demo) M = { at: null, order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
+    if (demo) M = { at: null, order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
       tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i })) };
     else {
       show("load");
@@ -617,56 +671,53 @@
       M = await r.json().catch(() => null);
       if (!r.ok || !M || !M.tasks) return fail("Couldn't open the map.", (M && M.error) || "Try again in a minute");
     }
-    $("map").classList.remove("p2"); pile.innerHTML = ""; col.innerHTML = ""; tray.innerHTML = "";
-    $("mstep").textContent = "01 / Empty your head"; $("mnext").firstElementChild.textContent = "Next: the tasks";
-    const was = new Map((M.order || []).map((b, i) => [b.name, "was " + pad(i + 1)]));
-    // Clients with nothing open still belong in his head: they go in the pile too.
-    const all = [...(M.order || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0 }))].sort(() => Math.random() - .5);
-    for (const b of all) pile.appendChild(node(b, was.get(b.name)));
-    for (const b of M.parked || []) tray.appendChild(node(b));
-    for (const n of document.querySelectorAll("#map .node")) {
-      const mine = M.tasks.filter((t) => t.bucket === n.dataset.name).sort((a, b) => a.pos - b.pos);
-      for (const t of mine) n.querySelector(".tasks").appendChild(chip(t));
-    }
-    renumber(); show("map");
-    if (!calm) [...pile.children].forEach((n, i) => n.animate([{ opacity: 0, transform: `translateY(-26px) rotate(${(Math.random() * 30 - 15).toFixed(0)}deg) scale(.9)` }, { opacity: 1, transform: getComputedStyle(n).transform === "none" ? "none" : getComputedStyle(n).transform }], { duration: 420, delay: 40 * i, easing: ease, fill: "backwards" }));
+    groups().forEach((g) => g.remove());
+    const pos = M.pos || {}, slim = board.getBoundingClientRect().width < 600;
+    const known = [...(M.order || []), ...(M.parked || [])].filter((b) => pos[b.name]);
+    for (const b of known) grp(b, pos[b.name].x, pos[b.name].y, false);
+    // Everything else lands in a loose pile: beside the map if there is one, in the middle of the board if not.
+    const loose = [...(M.order || []), ...(M.parked || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0 }))].filter((b) => !pos[b.name]).sort(() => Math.random() - .5);
+    const cols = slim ? 2 : Math.max(2, Math.min(4, Math.ceil(Math.sqrt(loose.length)))), step = slim ? 150 : 190;
+    const px = known.length ? Math.max(...known.map((b) => pos[b.name].x)) + W + 120 + ((cols - 1) / 2) * step : 0, py = known.length ? 120 : 220;
+    loose.forEach((b, i) => grp(b, px + (i % cols - (cols - 1) / 2) * step - 70 + Math.random() * 50 - 25, py + Math.floor(i / cols) * 66 + Math.random() * 24 - 12, true));
+    // First time, the park line sits a little under the pile, with room above it to build the map.
+    parkY = M.parkY || py + Math.ceil(loose.length / cols) * 66 + 150;
+    for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
+    board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
+    $("mhint").classList.remove("off"); setTimeout(() => $("mhint").classList.add("off"), 6000);
+    show("map"); rerank(); fit(false);
+    if (!calm) groups().filter((g) => g.classList.contains("new")).forEach((g, i) => g.animate([{ opacity: 0, transform: `translateY(-40px) rotate(${(Math.random() * 40 - 20).toFixed(0)}deg) scale(.85)` }, { opacity: 1, transform: "none" }], { duration: 460, delay: 45 * i, easing: ease, fill: "backwards" }));
   }
-  function parkRest() { const rest = [...pile.children]; if (!rest.length) return; flip(() => rest.forEach((n) => tray.appendChild(n))); renumber(); }
-  async function mapNext(reorganize) {
-    const m = $("map");
-    if (!m.classList.contains("p2")) {
-      parkRest(); m.classList.add("p2"); $("mstep").textContent = "02 / The work under each one"; $("mnext").firstElementChild.textContent = "Seal the map"; renumber(); window.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
-      if (!calm) [...col.querySelectorAll(".chip")].forEach((c, i) => c.animate([{ opacity: 0, transform: "translateX(-14px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(900, 22 * i), easing: ease, fill: "backwards" }));
-      return;
-    }
-    // Seal: each bucket presses into place, top to bottom, then it goes to Sol.
+  async function seal(reorganize) {
     $("mnext").disabled = true; $("mseal2").disabled = true; $("maperr").textContent = "";
-    const tiles = [...col.querySelectorAll(":scope > .node > .tile")];
-    if (!calm) { tiles.forEach((t, i) => t.animate([{ transform: "scale(1)" }, { transform: "scale(.965)", offset: .45 }, { transform: "scale(1)" }], { duration: 300, delay: 80 * i, easing: ease })); buzz(10); await new Promise((r) => setTimeout(r, 80 * tiles.length + 260)); }
-    const names = (z) => [...z.children].map((n) => n.dataset.name), tasks = {};
-    for (const n of [...col.children, ...tray.children]) tasks[n.dataset.name] = [...n.querySelectorAll(".chip")].map((c) => +c.dataset.id);
+    // Whatever never left the pile is parked.
+    const gs0 = groups(), fresh = gs0.filter((g) => g.classList.contains("new"));
+    if (fresh.length) { fresh.forEach((g, i) => { g.classList.remove("new"); g.classList.add("tidy"); parkAt(g, i + gs0.filter((x) => x.classList.contains("parked")).length, 60); }); await new Promise((r) => setTimeout(r, calm ? 0 : 600)); fresh.forEach((g) => g.classList.remove("tidy")); }
+    const live = rerank(), gs = groups(), parked = gs.filter((g) => !live.includes(g));
+    if (!calm) { live.forEach((g, i) => g.querySelector(".tile").animate([{ filter: "brightness(1)" }, { filter: "brightness(.82)", offset: .4 }, { filter: "brightness(1)" }], { duration: 320, delay: 90 * i, easing: ease })); buzz(10); await new Promise((r) => setTimeout(r, 90 * live.length + 280)); }
+    const y0 = gy(live[0]), y1 = gy(live[live.length - 1]), levels = {}, pos = {}, tasks = {};
+    for (const g of live) levels[g.dataset.name] = y1 > y0 ? +((gy(g) - y0) / (y1 - y0)).toFixed(3) : 0;
+    for (const g of gs) { pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
     try {
       if (!demo) {
-        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: names(col), parked: names(tray), tasks, reorganize: !!reorganize } }) });
+        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, pos, parkY, tasks, reorganize: !!reorganize } }) });
         if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "It didn't save. Try again.");
       }
-      sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it.");
+      sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it. The board stays as you left it.");
     } catch (e) { $("maperr").textContent = e.message; }
     $("mnext").disabled = false; $("mseal2").disabled = false;
   }
   $("addb").addEventListener("submit", (e) => {
-    e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); if (!v) return;
-    if ([...document.querySelectorAll("#map .node")].some((n) => n.dataset.name.toLowerCase() === v.toLowerCase())) { $("addin").value = ""; return; }
-    const n = node({ name: v, kind: "project", count: 0 }, "new");
-    const x = document.createElement("button"); x.className = "x"; x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + v);
-    x.onclick = (ev) => { ev.stopPropagation(); if (!n.querySelector(".chip")) { flip(() => n.remove()); renumber(); } };
-    n.querySelector(".tile").insertBefore(x, n.querySelector(".grip"));
-    pile.appendChild(n); $("addin").value = ""; renumber();
-    if (!calm) n.animate([{ transform: "scale(.4)", opacity: 0 }, { transform: getComputedStyle(n).transform, opacity: 1 }], { duration: 380, easing: ease });
+    e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); $("addin").value = ""; $("addin").blur(); if (!v) return;
+    if (groups().some((g) => g.dataset.name.toLowerCase() === v.toLowerCase())) return;
+    const r = board.getBoundingClientRect(), g = grp({ name: v, kind: "project", count: 0 }, (r.width / 2 - V.x) / V.k - W / 2 + Math.random() * 60 - 30, (r.height / 2 - V.y) / V.k - 30 + Math.random() * 40 - 20, true, "new");
+    rerank(); if (!calm) g.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: ease });
   });
-  $("mpark").onclick = parkRest; $("mnext").onclick = () => mapNext(false); $("mseal2").onclick = () => mapNext(true);
+  $("mtasks").onclick = () => { const off = board.classList.toggle("notasks"); $("mtasks").textContent = off ? "Show tasks" : "Hide tasks"; };
+  $("mtidy").onclick = tidy; $("mnext").onclick = () => seal(false); $("mseal2").onclick = () => seal(true);
   $("gomap").onclick = openMap; $("gohome").onclick = () => (key || demo ? home() : null);
-  document.querySelector(".word").onclick = () => { if (key || demo === true && qs.get("demo") === "home") home(); };
+  document.querySelector(".word").onclick = () => { if (key || qs.get("demo") === "home" || qs.get("demo") === "map") home(); };
+  addEventListener("resize", () => { if ($("map").classList.contains("on")) view(); });
 
   async function boot() {
     if (demo) return qs.get("demo") === "home" ? home() : qs.get("demo") === "map" ? openMap() : loadSession();
