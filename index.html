@@ -581,7 +581,9 @@
     for (const sc of [{ name: "all", label: "Everything", count: H.total }, ...H.scopes.map((x) => ({ ...x, label: x.name }))]) {
       const b = document.createElement("button"); b.className = "scope"; b.disabled = sc.count < 3;
       const a = document.createElement("span"); a.textContent = sc.label;
-      const c = document.createElement("span"); c.className = "mono"; c.textContent = sc.count < 3 ? sc.count + " (too few to rank)" : pad(sc.count) + " tasks";
+      const going = (H.resume || []).find((x) => String(x.scope).toLowerCase() === sc.name.toLowerCase());
+      const c = document.createElement("span"); c.className = "mono"; c.textContent = going ? "Resume \u00b7 " + going.picks + " picks in" : sc.count < 3 ? sc.count + " (too few to rank)" : pad(sc.count) + " tasks";
+      if (going) { b.disabled = false; c.style.color = "var(--orange)"; }
       b.append(a, c); b.onclick = () => startScope(sc.name, b); box.appendChild(b);
     }
     const days = H.map ? Math.floor((Date.now() - Date.parse(H.map.at)) / 864e5) : null;
