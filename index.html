@@ -121,8 +121,8 @@
 
   /* Mind map: a board you pan and zoom. Higher on the board = more on his mind. */
   body.wide .wrap { max-width: none; }
-  #map { gap: 10px; }
-  .board { position: relative; flex: 1; min-height: 440px; height: calc(100dvh - 250px); overflow: hidden; background-color: #ECEAEB; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
+  #map { gap: 10px; position: relative; overflow: hidden; }
+  .board { position: relative; flex: 1; min-height: 380px; height: calc(100dvh - 128px); overflow: hidden; background-color: #ECEAEB; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
   .board.pan { cursor: grabbing; }
   .world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
   .parkline { position: absolute; left: -6000px; width: 12000px; height: 0; border-top: 2px dashed rgba(29,29,27,.4); cursor: ns-resize; }
@@ -132,9 +132,9 @@
   .xl, .xr { position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .6; background: rgba(236,234,235,.8); padding: 3px 5px; }
   .xl { left: 6px; } .xr { right: 6px; } .xl::before { content: "\2190  "; } .xr::after { content: "  \2192"; }
   .parkline span { position: absolute; left: 5700px; top: 10px; white-space: nowrap; font-size: 13px; opacity: .6; }
-  .grp { position: absolute; width: 300px; z-index: 2; }
+  .grp { position: absolute; width: 300px; z-index: 2; translate: var(--nx, 0px) var(--ny, 0px); transition: translate .35s cubic-bezier(.2,.85,.2,1); }
   .grp.tidy { transition: left .55s cubic-bezier(.2,.85,.2,1), top .55s cubic-bezier(.2,.85,.2,1); }
-  .grp.lift { z-index: 9; }
+  .grp.lift { z-index: 9; } .grp[data-has]:not([data-shut]):not(.lift) { z-index: 5; }
   .tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 16px; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
   .grp:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
   .grp:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
@@ -196,8 +196,28 @@
   .tasks { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 0 22px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); }
   .grp.r1 > .tasks { margin-top: 16px; } .grp.r2 > .tasks { margin-top: 13px; }
   .board.notasks .tasks, .grp.new .tasks, .grp.parked .tasks { display: none; }
-  .board:not(.dragchip) .grp[data-shut] > .tasks { display: none; }
-  .tile .ct:not(:empty) { cursor: pointer; padding: 8px 0 8px 10px; margin: -8px 0; } .tile .ct:not(:empty)::after { content: "  \25BE"; } .grp[data-shut] .tile .ct:not(:empty)::after { content: "  \25B8"; }
+  .grp[data-shut] > .tasks { display: none; }
+  .hint { bottom: 46px !important; }
+  /* The right side of a card opens it on the map: Projects, and tasks under them. */
+  .grp[data-has] .tile .ct { cursor: pointer; padding: 16px 2px 16px 16px; margin: -16px 0; } .grp[data-has] .tile .ct::after { content: "  \25BE"; font-size: 13px; } .grp[data-has][data-shut] .tile .ct::after { content: "  \25B8"; }
+  .tasks .ph { display: flex; gap: 7px; align-items: baseline; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 2px 1px; cursor: pointer; }
+  .tasks .ph::before { content: "\25BE"; } .tasks .ph[data-shut]::before { content: "\25B8"; } .tasks .ph span { opacity: .55; }
+  .chip[data-fold], .irow[data-fold] { display: none; } .chip[data-pid], .irow[data-pid] { margin-left: 12px; }
+  .irow { background: rgba(255,255,255,.55); padding: 8px 10px 8px 11px; border-radius: 12px 14px 12px 15px; font-weight: 500; font-size: 14px; letter-spacing: -.01em; line-height: 1.15; overflow-wrap: anywhere; }
+  /* The toolbar and the Areas stay out of the way until he reaches for them. */
+  .mact { position: absolute; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--fog); padding: 10px; transform: translateY(110%); transition: transform .28s cubic-bezier(.2,.85,.2,1); box-shadow: 0 -12px 30px rgba(29,29,27,.18); }
+  .mact.open { transform: none; }
+  .mact .add select { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; border: 1.5px solid var(--ink); border-left: 0; background: var(--fog); color: var(--ink); padding: 0 8px; border-radius: 0; max-width: 38%; -webkit-appearance: none; appearance: none; }
+  .hud.tab { background: var(--ink); color: var(--white); padding: 9px 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+  #mtab { left: 50%; transform: translateX(-50%); bottom: 0; } #atab { left: 10px; top: 34px; background: var(--white); color: var(--ink); } .hud.tab.on { opacity: .45; }
+  .hud.legend { display: none; top: 68px; } .hud.legend.open { display: flex; }
+  body.full header, body.full footer { display: none; } body.full .wrap { padding: env(safe-area-inset-top) 0 0; gap: 0; max-width: none; }
+  body.full .board { height: calc(100dvh - env(safe-area-inset-top)); min-height: 0; } body.full #map { gap: 0; } body.full #maperr:empty { display: none; }
+  @media (max-width: 600px) {
+    .chip .ctitle, .irow { font-size: 16px; } .chip small { font-size: 10.5px; } .tile .ct { font-size: 11.5px; } .tasks .ph { font-size: 12px; padding-top: 9px; }
+    .hud.count { top: 34px !important; } .sp-head h2 { font-size: 36px; } .sp-task { font-size: 17px; padding: 14px; } .space { padding: 14px 12px 110px; }
+    .hud.zoom button { min-width: 44px; height: 44px; } .hud.zoom { bottom: 44px !important; } .hint { bottom: 96px !important; }
+  }
   .board.notasks .tile .ct::after, .grp.new .tile .ct::after, .grp.parked .tile .ct::after { content: none !important; }
   .tasks:empty { display: none; } .board.dragchip .grp:not(.new):not(.parked) .tasks:empty { display: flex; min-height: 30px; }
   .board.dragchip .tasks:empty::after { content: "Drop it here"; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; opacity: .5; padding: 7px 0; }
@@ -221,7 +241,7 @@
   @media (min-width: 820px) {
     #home.on { display: grid; grid-template-columns: 1fr 1.2fr; align-items: start; } #home .hero { min-height: 380px; grid-row: span 2; }
     .scope { padding: 20px 24px; } .maprow { padding: 28px 24px; }
-    .board { height: calc(100dvh - 300px); min-height: 480px; } .hint { bottom: 14px; }
+    .board { height: calc(100dvh - 176px); min-height: 480px; }
     .mact { grid-template-columns: 1.4fr auto auto auto 1fr; align-items: stretch; } .mact .add, .mact .cta { grid-column: auto; }
     .wrap { padding: 28px; gap: 16px; } main, .screen { gap: 16px; }
     header { min-height: 96px; grid-template-columns: 1fr auto 64px 64px; } header .word { font-size: 68px; padding: 12px 24px 16px; }
@@ -274,11 +294,13 @@
         <div class="hud legend" id="legend"></div>
         <div class="space" id="space"></div>
         <div class="hud sheet" id="sheet"></div>
-        <div class="hud zoom"><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
-        <div class="hint mono" id="mhint">Up = priority. Right = enjoy. Tap to open.</div>
+        <div class="hud zoom"><button id="zfull" class="mono">Full</button><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
+        <button class="hud tab" id="atab">Areas</button>
+        <button class="hud tab" id="mtab">&#9652; Add &middot; Tidy &middot; Seal</button>
+        <div class="hint mono" id="mhint">Tap a card to go in. Tap its right side to open it here.</div>
       </div>
-      <div class="mact">
-        <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
+      <div class="mact" id="mact">
+        <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><select id="addarea" aria-label="Area"></select><button class="tool" type="submit">Add</button></form>
         <button class="tool" id="mtasks">Hide tasks</button>
         <button class="tool" id="mtidy">Tidy up</button>
         <button class="tool" id="mseal2">Seal + redo my week</button>
@@ -347,7 +369,7 @@
   const qs = new URLSearchParams(location.search), demo = qs.has("demo");
   let token = qs.get("t");
   const $ = (id) => document.getElementById(id);
-  const show = (id) => { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); document.body.classList.toggle("wide", id === "map"); window.scrollTo(0, 0); };
+  const show = (id) => { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); document.body.classList.toggle("wide", id === "map"); if (id !== "map" && document.body.classList.contains("full")) $("zfull").click(); window.scrollTo(0, 0); };
   const pad = (n) => String(n).padStart(2, "0");
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
@@ -577,7 +599,7 @@
   // their place and still count when he seals.
   let hidden = new Set(store.get("sr:hidden") || []);
   const hidKey = (g) => (groupFor(g.dataset.name) || { id: "none" }).id;
-  function setHidden(ids) { hidden = new Set(ids); store.set("sr:hidden", [...hidden]); legend(); rerank(); fit(true); }
+  function setHidden(ids) { hidden = new Set(ids); store.set("sr:hidden", [...hidden]); legend(); rerank(); nudge(); fit(true); }
   function paint(g) { if (hidden.has(hidKey(g))) g.dataset.hid = "1"; else delete g.dataset.hid; const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B"); }
   function legend() {
     const box = $("legend"); box.innerHTML = "";
@@ -591,8 +613,32 @@
     if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No area", "#E1DFE0");
     if (hidden.size) { const all = document.createElement("button"); all.className = "add"; all.textContent = "Show all"; all.onclick = () => setHidden([]); box.appendChild(all); }
     const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Area"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
+    const sel = $("addarea"), cur = sel.value; sel.innerHTML = "";
+    for (const gr of [null, ...G]) { const o = document.createElement("option"); o.value = gr ? gr.id : ""; o.textContent = gr ? gr.name : "Area: Sol decides"; sel.appendChild(o); }
+    sel.value = G.some((x) => x.id === cur) ? cur : "";
+    $("atab").textContent = "Areas" + (hidden.size ? " \u00b7 " + hidden.size + " hidden" : "");
     groups().forEach(paint); autosave(); if (SP) renderSpace();
   }
+  // Things that stay out of the way until he reaches for them: hover the tab (or tap it) to open, leave to close.
+  function peek(handle, panel) {
+    let t = null, mouse = false;
+    const open = () => { clearTimeout(t); panel.classList.add("open"); handle.classList.add("on"); };
+    const close = () => { clearTimeout(t); if (panel.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return; panel.classList.remove("open"); handle.classList.remove("on"); };
+    const later = (fn, ms) => { clearTimeout(t); t = setTimeout(fn, ms); };
+    handle.addEventListener("pointerenter", (e) => { mouse = e.pointerType === "mouse"; if (mouse && !act) later(open, 160); });
+    for (const el of [handle, panel]) el.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") later(close, 380); });
+    panel.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") clearTimeout(t); });
+    handle.addEventListener("click", () => { if (mouse || !panel.classList.contains("open")) open(); else close(); });
+    return { open, close };
+  }
+  const drawer = peek($("mtab"), $("mact")), areas = peek($("atab"), $("legend"));
+  // Full screen: the board takes the whole window (and the whole display where the browser allows it).
+  $("zfull").onclick = async () => {
+    const on = document.body.classList.toggle("full"); $("zfull").textContent = on ? "Exit" : "Full";
+    try { if (on && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else if (!on && document.fullscreenElement) await document.exitFullscreen(); } catch {}
+    setTimeout(() => fit(true), 60);
+  };
+  document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("full")) { document.body.classList.remove("full"); $("zfull").textContent = "Full"; } });
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
   $("space").addEventListener("wheel", (e) => e.stopPropagation());
@@ -631,6 +677,7 @@
     sheet.classList.add("on"); if (isNew) setTimeout(() => name.focus(), 50);
   }
   const board = $("board"), world = $("world"), parkline = $("parkline"), midline = $("midline"), W = 300;
+  for (const el of [board, $("map")]) el.addEventListener("scroll", () => { if (el.scrollLeft || el.scrollTop) { el.scrollLeft = 0; el.scrollTop = 0; } });
   // Left to right is how much he enjoys it (Zach, Nov 19): the dashed center line is neutral, a card's middle
   // 640 to the right of it is "love it", 640 to the left "can't stand it".
   const enjoyOf = (g) => +Math.max(-1, Math.min(1, (gx(g) + W / 2 - midX) / 640)).toFixed(2);
@@ -647,7 +694,7 @@
     if (!gs.some((g) => !g.classList.contains("new") && gy(g) < parkY)) y0 -= 240; // nothing placed yet: leave room above the pile to build upward
     const pad = r.width < 600 ? 34 : 70, k = Math.max(.2, Math.min(1.15, (r.width - pad * 2) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)));
     // Never so far out that nothing can be read: past that, show the top of the map and let him pan.
-    const floor = r.width < 600 ? .5 : .4, kk = Math.max(k, floor);
+    const floor = r.width < 600 ? .8 : .4, kk = Math.max(k, floor);
     const to = kk > k ? { k: kk, x: r.width / 2 - ((x0 + x1) / 2) * kk, y: pad - y0 * kk } : { k, x: r.width / 2 - ((x0 + x1) / 2) * k, y: r.height / 2 - ((y0 + y1) / 2) * k };
     if (!animate || calm) { V = to; return view(); }
     const from = { ...V }, t0 = performance.now();
@@ -736,6 +783,7 @@
     const under = (id) => all.filter((t) => (pid.has(t.project_id) ? t.project_id : null) === id);
     const box = el("div", "in");
     const hd = el("div", "sp-head"), back = el("button", "sp-btn", "\u2190 Map"), h2 = el("h2", "", name), ar = el("button", "sp-btn");
+    if (!tracked()) { h2.style.cursor = "pointer"; h2.title = "Rename"; h2.onclick = () => spaceSheet(); }
     back.onclick = closeSpace; const dot = el("i"); dot.style.setProperty("--bg", gr ? COLORS[gr.color][0] : "#E1DFE0"); ar.append(dot, gr ? gr.name : "No area"); ar.onclick = () => cardSheet(SP);
     hd.append(back, h2, ar); box.appendChild(hd);
     box.appendChild(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."));
@@ -757,7 +805,7 @@
     np.onsubmit = async (e) => { e.preventDefault(); const v = ni.value.replace(/\s+/g, " ").trim(); if (!v) return; ni.value = ""; say("");
       try { const r = await spCall({ op: "add_project", space: name, name: v }); if (!M.projects.some((p) => p.id === r.project.id)) M.projects.push(r.project); renderSpace(); const f = spaceEl.querySelector(`[data-key="t${r.project.id}"]`); if (f) f.focus(); } catch (err) { say(err.message); } };
     box.appendChild(np);
-    spaceEl.innerHTML = ""; spaceEl.appendChild(box);
+    spaceEl.innerHTML = ""; spaceEl.appendChild(box); relayout();
     if (keep) { const f = spaceEl.querySelector(`[data-key="${keep.key}"]`); if (f) { f.value = keep.v; f.focus(); } }
   }
   // Adding is queued, so he can keep typing a brain dump while each one lands on the calendar.
@@ -804,6 +852,21 @@
     h.querySelector("button").textContent = "Save"; h.querySelector("button").onclick = save; ti.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
     sheet.classList.add("on");
   }
+  function spaceSheet() {
+    sheet.innerHTML = ""; const h = head("Space"); sheet.appendChild(h);
+    const from = SP.dataset.name, ni = document.createElement("input"); ni.value = from; ni.maxLength = 40; sheet.appendChild(field("Name", ni));
+    const save = async () => { const to = ni.value.replace(/\s+/g, " ").trim(); closeSheet(); if (!to || to === from) return;
+      if (groups().some((g) => g !== SP && g.dataset.name.toLowerCase() === to.toLowerCase())) return say(`There's already a Space called ${to}.`);
+      try { if (!demo) await spCall({ op: "rename_space", from, to });
+        SP.dataset.name = to; SP.querySelector(".tile b").textContent = to; if (groupOf[from]) { groupOf[to] = groupOf[from]; delete groupOf[from]; }
+        for (const t of M.tasks) if (t.bucket === from) t.bucket = to; for (const x of [...M.items, ...M.projects]) if (x.space === from) x.space = to;
+        if (opened.has(from)) { opened.delete(from); opened.add(to); store.set("sr:open", [...opened]); }
+        autosave();
+      } catch (e) { say(e.message); }
+      renderSpace(); };
+    h.querySelector("button").textContent = "Save"; h.querySelector("button").onclick = save; ni.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    sheet.classList.add("on"); ni.focus();
+  }
   function projectSheet(p, projects) {
     sheet.innerHTML = ""; const h = head("Project"); sheet.appendChild(h);
     const ni = document.createElement("input"); ni.value = p.name; ni.maxLength = 40; sheet.appendChild(field("Name", ni));
@@ -821,8 +884,39 @@
   }
 
   // Collapse one card's tasks (Zach, Nov 19): tap its task count. A view, kept on this device.
-  let shut = new Set(store.get("sr:shut") || []);
-  function toggleShut(g) { const n = g.dataset.name; if (shut.has(n)) { shut.delete(n); delete g.dataset.shut; } else { shut.add(n); g.dataset.shut = "1"; } store.set("sr:shut", [...shut]); buzz(6); }
+  // On the map a card is closed until he opens it (the right side of the card); what's open is kept on this device.
+  let opened = new Set(store.get("sr:open") || []);
+  function toggleShut(g) { const n = g.dataset.name; if (opened.has(n)) { opened.delete(n); g.dataset.shut = "1"; } else { opened.add(n); delete g.dataset.shut; } store.set("sr:open", [...opened]); buzz(6); nudge(); }
+  // What hangs under a card: loose tasks first, then each Project with its tasks. One flat list, so tasks can still
+  // be dragged anywhere; a task dropped under a Project's name is filed into it.
+  function layoutCard(g) {
+    const name = g.dataset.name, box = g.querySelector(".tasks"); if (!M) return;
+    box.querySelectorAll(".ph, .irow").forEach((x) => x.remove());
+    const chips = [...box.querySelectorAll(".chip")], projects = (M.projects || []).filter((p) => p.space === name).sort((x, y) => x.pos - y.pos || x.id - y.id), pid = new Set(projects.map((p) => p.id));
+    const pOf = (c) => { const t = taskOf(+c.dataset.id); return t && pid.has(t.project_id) ? t.project_id : null; }, items = (M.items || []).filter((i) => i.space === name);
+    const put = (c, p, fold) => { if (p) c.dataset.pid = p; else delete c.dataset.pid; if (fold) c.dataset.fold = "1"; else delete c.dataset.fold; box.appendChild(c); };
+    const irow = (i) => { const d = document.createElement("div"); d.className = "irow"; d.textContent = i.title; return d; };
+    for (const c of chips.filter((c) => pOf(c) === null)) put(c, null, false);
+    for (const i of items.filter((i) => !pid.has(i.project_id))) put(irow(i), null, false);
+    for (const p of projects) { const sh = pshut.has(p.id), mine = chips.filter((c) => pOf(c) === p.id), its = items.filter((i) => i.project_id === p.id), h = document.createElement("div"), n = document.createElement("span");
+      h.className = "ph"; h.dataset.pid = p.id; if (sh) h.dataset.shut = "1"; n.textContent = mine.length + its.length || ""; h.append(p.name, n); box.appendChild(h);
+      for (const c of mine) put(c, p.id, sh); for (const i of its) put(irow(i), p.id, sh); }
+    if (box.children.length) g.dataset.has = "1"; else delete g.dataset.has;
+  }
+  const relayout = () => { groups().forEach(layoutCard); nudge(); };
+  // Cards he arranged one Area at a time can land on top of each other once more Areas are showing. What's showing
+  // is bumped just far enough apart to read; it's only how they're drawn. Where he put each card (and so its
+  // priority and enjoyment) doesn't change, and with fewer showing they sit exactly where he left them.
+  function nudge() {
+    const gs = groups(); for (const g of gs) { g.style.removeProperty("--nx"); g.style.removeProperty("--ny"); }
+    const v = gs.filter((g) => !g.dataset.hid && !g.classList.contains("new")).map((g) => ({ g, x: gx(g), y: gy(g), w: W, h: g.offsetHeight || 54, nx: 0, ny: 0 })).sort((a, b) => a.y - b.y || a.x - b.x), gap = 10;
+    for (let pass = 0, any = true; pass < 30 && any; pass++) { any = false;
+      for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) { const a = v[i], b = v[j];
+        const ox = Math.min(a.x + a.nx + a.w, b.x + b.nx + b.w) - Math.max(a.x + a.nx, b.x + b.nx), oy = Math.min(a.y + a.ny + a.h, b.y + b.ny + b.h) - Math.max(a.y + a.ny, b.y + b.ny);
+        if (ox <= 0 || oy <= 0) continue; any = true;
+        if (ox < oy) b.nx += (b.x + b.nx >= a.x + a.nx ? 1 : -1) * (ox + gap); else b.ny += oy + gap; } }
+    for (const q of v) if (q.nx || q.ny) { q.g.style.setProperty("--nx", q.nx + "px"); q.g.style.setProperty("--ny", q.ny + "px"); }
+  }
   function grp(b, x, y, fresh, hint) {
     const g = document.createElement("div"); g.className = "grp" + (fresh ? " new" : ""); g.dataset.name = b.name;
     g.style.left = x + "px"; g.style.top = y + "px"; g.style.setProperty("--rot", (Math.random() * 16 - 8).toFixed(1) + "deg");
@@ -834,7 +928,7 @@
     if (b.kind === "project") { const x2 = document.createElement("button"); x2.className = "x"; x2.type = "button"; x2.textContent = "×"; x2.setAttribute("aria-label", "Remove " + b.name);
       x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); autosave(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
-    if (shut.has(b.name)) g.dataset.shut = "1";
+    if (!opened.has(b.name)) g.dataset.shut = "1";
     g.dataset.kind = b.kind || "project"; if (b.sam) g.dataset.sam = "1";
     g.append(t, tl); world.appendChild(g); paint(g);
     return g;
@@ -849,6 +943,7 @@
   // One set of pointer handlers for the whole board: drag a card, drag a task, drag the park line, pan, or pinch.
   const pts = new Map(); let act = null, pinch = null;
   board.addEventListener("pointerdown", (e) => {
+    if (!e.target.closest(".hud")) { drawer.close(); areas.close(); }
     if (e.target.closest(".hud, .x, .space") || (e.pointerType === "mouse" && e.button !== 0)) return;
     if (sheet.classList.contains("on")) closeSheet();
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -857,8 +952,8 @@
     if (pts.size === 2) { cancelAct(); const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: V.k }; return; }
     if (pts.size > 2) return;
     const ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), line = e.target.closest(".parkline");
-    act = { kind: ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY };
-    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); act.onCt = !!e.target.closest(".ct"); }
+    act = { kind: ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY, ph: e.target.closest(".ph") };
+    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); act.onCt = !!e.target.closest(".ct"); act.nx = parseFloat(act.el.style.getPropertyValue("--nx")) || 0; act.ny = parseFloat(act.el.style.getPropertyValue("--ny")) || 0; }
     if (act.kind === "pan") board.classList.add("pan");
   });
   board.addEventListener("pointermove", (e) => {
@@ -867,7 +962,7 @@
     if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()], r = board.getBoundingClientRect(); zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d); return; }
     if (!act) return;
     const dx = e.clientX - act.x0, dy = e.clientY - act.y0;
-    if (!act.moved) { if (Math.hypot(dx, dy) < 5) return; act.moved = true; if (act.kind === "grp") { act.el.classList.remove("new", "tidy"); act.el.classList.add("lift"); world.appendChild(act.el); buzz(6); } if (act.kind === "chip") chipBegin(e); }
+    if (!act.moved) { if (Math.hypot(dx, dy) < 5) return; act.moved = true; if (act.kind === "grp") { act.gx += act.nx; act.gy += act.ny; act.el.style.removeProperty("--nx"); act.el.style.removeProperty("--ny"); act.el.style.transition = "none"; act.el.classList.remove("new", "tidy"); act.el.classList.add("lift"); world.appendChild(act.el); buzz(6); } if (act.kind === "chip") chipBegin(e); }
     if (act.kind === "pan") { V.x = act.vx + dx; V.y = act.vy + dy; view(); }
     else if (act.kind === "line") { parkY = Math.round(act.py + dy / V.k); rerank(); }
     else if (act.kind === "grp") { act.el.style.left = act.gx + dx / V.k + "px"; act.el.style.top = act.gy + dy / V.k + "px"; const before = act.el.className; rerank(); if (act.el.className !== before) buzz(4); }
@@ -876,12 +971,13 @@
   const up = (e) => {
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
     if (!act) return;
-    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) { if (act.onCt && act.el.querySelector(".chip") && !board.classList.contains("notasks")) toggleShut(act.el); else openSpace(act.el); } }
+    if (act.kind === "grp") { act.el.classList.remove("lift"); act.el.style.transition = ""; rerank(); if (act.moved) nudge(); if (!act.moved) { if (act.onCt && act.el.dataset.has && !board.classList.contains("notasks")) toggleShut(act.el); else openSpace(act.el); } }
+    if (act.kind === "pan" && !act.moved && act.ph) { const id = +act.ph.dataset.pid; if (pshut.has(id)) pshut.delete(id); else pshut.add(id); store.set("sr:pshut", [...pshut]); relayout(); buzz(4); }
     if (act.kind === "chip" && act.moved) chipDrop();
     if (act.moved && act.kind !== "pan") autosave();
     board.classList.remove("pan"); act = null;
   };
-  function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") act.el.classList.remove("lift"); board.classList.remove("pan"); act = null; }
+  function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") { act.el.classList.remove("lift"); act.el.style.transition = ""; } board.classList.remove("pan"); act = null; }
   board.addEventListener("pointerup", up); board.addEventListener("pointercancel", up);
   board.addEventListener("wheel", (e) => { e.preventDefault(); const r = board.getBoundingClientRect();
     if (e.ctrlKey || e.metaKey) zoomAt(e.clientX - r.left, e.clientY - r.top, V.k * Math.exp(-e.deltaY * .012)); else { V.x -= e.deltaX; V.y -= e.deltaY; view(); } $("mhint").classList.add("off"); }, { passive: false });
@@ -907,6 +1003,7 @@
     if (!zone) return;
     let before = null;
     for (const c of zone.children) { if (c === act.el) continue; const r = c.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { before = c; break; } }
+    if (zone.parentNode.dataset.shut) before = [...zone.children].find((c) => c !== act.el) || null; // onto a closed card: loose, at the top
     if (act.el.parentNode === zone && (before ? act.el.nextElementSibling === before : act.el === zone.lastElementChild)) return;
     const chips = [...world.querySelectorAll(".chip")].filter((c) => c !== act.el), was = new Map(chips.map((c) => [c, c.getBoundingClientRect()]));
     zone.insertBefore(act.el, before); buzz(4);
@@ -916,6 +1013,14 @@
   function chipDrop() {
     const el = act.el, g = act.g, to = el.getBoundingClientRect(), from = g.getBoundingClientRect();
     const done = () => { g.remove(); el.classList.remove("hold"); board.classList.remove("dragchip"); };
+    const t = taskOf(+el.dataset.id), card = el.closest(".grp");
+    if (t && card) {
+      let p = null; for (let x = el.previousElementSibling; x; x = x.previousElementSibling) if (x.classList.contains("ph")) { p = +x.dataset.pid; break; }
+      const space = card.dataset.name, crossed = t.bucket !== space, was = crossed ? null : (t.project_id ?? null);
+      t.bucket = space; t.project_id = p;
+      if (p !== was && !demo) spCall({ op: "edit_task", id: t.id, kind: "task", space, project_id: p }).catch(() => {});
+      relayout();
+    }
     if (calm) return done();
     g.animate([{ transform: `scale(${V.k})` }, { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(${V.k})` }], { duration: 200, easing: ease, fill: "forwards" }).onfinish = done;
   }
@@ -937,7 +1042,7 @@
     const pile = gs.filter((g) => g.classList.contains("new")), slim = narrow(), up = Math.ceil(pile.length / 2) * 66 + 70;
     pile.forEach((g, i) => { g.style.left = (slim ? midX - W / 2 : Math.max(midX - W / 2, ...live.map(gx)) + W + 110) + (i % 2) * 165 + Math.random() * 30 + "px"; g.style.top = (slim ? -up : 10) + Math.floor(i / 2) * 66 + Math.random() * 20 + "px"; });
     gs.forEach(paint); rerank(); buzz(10);
-    setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); fit(true); autosave(); }, calm ? 0 : 580);
+    setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); nudge(); fit(true); autosave(); }, calm ? 0 : 580);
   }
 
   async function openMap() {
@@ -975,10 +1080,10 @@
     const mids = known.filter((b) => pos[b.name].y < parkY).map((b) => pos[b.name].x + W / 2).sort((a, b) => a - b);
     midX = Number.isFinite(M.midX) ? M.midX : mids.length ? Math.round(mids[Math.floor(mids.length / 2)]) : 150;
     for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
-    legend();
+    legend(); relayout();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
     $("mhint").classList.remove("off"); setTimeout(() => $("mhint").classList.add("off"), 6000);
-    show("map"); rerank(); fit(false); loading = false;
+    show("map"); rerank(); nudge(); fit(false); loading = false;
     if (!calm) groups().filter((g) => g.classList.contains("new")).forEach((g, i) => g.animate([{ opacity: 0, transform: `translateY(-40px) rotate(${(Math.random() * 40 - 20).toFixed(0)}deg) scale(.85)` }, { opacity: 1, transform: "none" }], { duration: 460, delay: 45 * i, easing: ease, fill: "backwards" }));
   }
   async function seal(reorganize) {
@@ -1005,7 +1110,8 @@
   $("addb").addEventListener("submit", (e) => {
     e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); $("addin").value = ""; $("addin").blur(); if (!v) return;
     if (groups().some((g) => g.dataset.name.toLowerCase() === v.toLowerCase())) return;
-    if (hidden.has("none")) setHidden([...hidden].filter((k) => k !== "none")); // a new thing has no group yet, so it has to be showing
+    const area = $("addarea").value; if (area) groupOf[v] = area;
+    if (hidden.has(area || "none")) setHidden([...hidden].filter((k) => k !== (area || "none"))); // the new thing has to be showing
     const r = board.getBoundingClientRect(), g = grp({ name: v, kind: "project", count: 0 }, (r.width / 2 - V.x) / V.k - W / 2 + Math.random() * 60 - 30, (r.height / 2 - V.y) / V.k - 30 + Math.random() * 40 - 20, true, "new");
     rerank(); autosave(); if (!calm) g.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: ease });
   });
