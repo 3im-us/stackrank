@@ -71,6 +71,9 @@
   .card:active .who, .card.pick .who { color: var(--ink); }
   .vs { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px; background: var(--pink); transform: rotate(45deg); display: grid; place-items: center; z-index: 2; border-radius: 3px; pointer-events: none; }
   .vs b { transform: rotate(-45deg); font-family: var(--mono); font-size: 10px; font-weight: 700; }
+  .slot { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .slot .card { flex: 1; }
+  .did { align-self: flex-end; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 2px 3px; text-decoration: underline; text-underline-offset: 3px; }
+  .did.sure { color: var(--orange); font-weight: 700; } .did[disabled] { opacity: .5; }
   .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .tool { background: var(--fog); border: 1.5px solid var(--ink); padding: 14px 12px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
   .tool:active { background: var(--ink); color: var(--white); } .tool[disabled] { opacity: .35; }
@@ -82,6 +85,11 @@
   .row .n { font-family: var(--mono); color: var(--orange); font-size: 14px; letter-spacing: .12em; }
   .row .t { font-weight: 500; font-size: 17px; letter-spacing: -.012em; line-height: 1.15; overflow-wrap: anywhere; }
   .row .t small { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .6; margin-top: 4px; font-weight: 400; }
+  .row .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+  .row select { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); background: var(--fog); border: 1.5px solid var(--ink); border-radius: 0; padding: 6px 8px; -webkit-appearance: none; appearance: none; }
+  .row select.set { background: var(--pink); }
+  .row .did { align-self: auto; padding: 6px 0; }
+  .total { font-weight: 500; font-size: 26px; letter-spacing: -.02em; margin-top: 6px; }
   .row .mv { display: flex; gap: 2px; } .row .mv button { width: 38px; height: 38px; font-size: 15px; display: grid; place-items: center; }
   .row .mv button:active { background: var(--fog); } .row .mv button[disabled] { opacity: .2; }
 
@@ -146,9 +154,9 @@
       <div class="bar"><span class="mono" id="pickno">Pick 01</span><div class="track"><u id="fill"></u></div><span class="mono" id="placed"></span></div>
       <div class="q">Which one comes first?</div>
       <div class="duel">
-        <button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button>
+        <div class="slot"><button class="card a" id="A"><div class="top"><span class="mono who"></span><kbd>&larr;</kbd></div><h2></h2><div class="foot mono"></div></button><button class="did" id="dA">Already did this</button></div>
         <div class="vs"><b>VS</b></div>
-        <button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button>
+        <div class="slot"><button class="card b grain" id="B"><div class="top"><span class="mono who"></span><kbd>&rarr;</kbd></div><h2></h2><div class="foot mono"></div></button><button class="did" id="dB">Already did this</button></div>
       </div>
       <div class="tools"><button class="tool" id="undo">&larr; Undo</button><button class="tool" id="tie">Too close to call</button></div>
     </section>
@@ -157,7 +165,7 @@
     <section class="screen" id="result">
       <div class="list" id="list"></div>
       <div class="act">
-        <div class="block pink"><span class="mono">Your order</span><p class="lede" style="margin-top:10px">Nudge anything with the arrows, then send it. Sol repacks these on your calendar in this order, and the RUBRIC learns from your picks.</p></div>
+        <div class="block pink"><span class="mono">Your order</span><div class="total" id="total"></div><p class="lede" style="margin-top:10px">Set how long each one will really take, nudge the order with the arrows, then send it. Sol resizes and repacks these on your calendar, and learns your lengths for next time.</p></div>
         <button class="cta" id="send"><span>Send to Sol</span><span id="sendn"></span></button>
         <button class="tool" id="back">&larr; Back to picking</button>
         <p class="mono err" id="senderr"></p>
@@ -184,8 +192,11 @@
   const pad = (n) => String(n).padStart(2, "0");
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
-  let S = null, picks = [], order = null, pending = null;
+  let S = null, picks = [], order = null, pending = null, done = new Set(), mins = {};
   const byId = () => new Map(S.items.map((i) => [i.id, i]));
+  const live = () => S.items.filter((i) => !done.has(i.id));
+  const minsOf = (it) => mins[it.id] || it.minutes;
+  const hm = (m) => m < 60 ? m + " min" : Math.floor(m / 60) + " hr" + (m % 60 ? " " + (m % 60) + " min" : "");
 
   // The sort. Items arrive in the RUBRIC's order; each is placed into the ranked list by head-to-heads, checking
   // the bottom first (where the RUBRIC expects it), so agreeing with the RUBRIC costs about one pick per task.
@@ -193,9 +204,11 @@
   function solve() {
     const memo = new Map(picks.map((p) => [p.w + "|" + p.l, p]));
     const beats = (x, y) => memo.has(x + "|" + y) ? true : memo.has(y + "|" + x) ? false : undefined;
-    const sorted = [S.items[0].id];
-    for (let i = 1; i < S.items.length; i++) {
-      const x = S.items[i].id; let lo = 0, hi = sorted.length, step = 1;
+    const items = live();
+    if (!items.length) return { sorted: [], placed: 0 };
+    const sorted = [items[0].id];
+    for (let i = 1; i < items.length; i++) {
+      const x = items[i].id; let lo = 0, hi = sorted.length, step = 1;
       for (;;) {
         const probe = Math.max(0, sorted.length - step), c = beats(x, sorted[probe]);
         if (c === undefined) return { ask: [x, sorted[probe]], placed: i, sorted };
@@ -209,13 +222,13 @@
       }
       sorted.splice(lo, 0, x);
     }
-    return { sorted, placed: S.items.length };
+    return { sorted, placed: items.length };
   }
   const worst = (n) => { let c = 0; for (let i = 2; i <= n; i++) c += Math.ceil(Math.log2(i)); return c; };
 
   let saveTimer = null;
   function save() {
-    store.set("sr:" + token, { picks });
+    store.set("sr:" + token, { picks, mins });
     if (demo) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks }), keepalive: true }).catch(() => {}), 600);
@@ -224,23 +237,25 @@
   function card(el, it) {
     el.querySelector(".who").textContent = it.client || "3iM";
     el.querySelector("h2").textContent = it.title;
-    const mins = it.minutes >= 60 ? (it.minutes / 60).toFixed(it.minutes % 60 ? 1 : 0) + " hr" : it.minutes + " min";
     el.querySelector(".foot").innerHTML = "";
-    for (const t of [mins, it.when ? "On " + it.when : "", it.deadline ? "Due " + it.deadline : "", it.someday ? "Nice to have" : ""].filter(Boolean)) { const s = document.createElement("span"); s.textContent = t; el.querySelector(".foot").appendChild(s); }
+    for (const t of [hm(minsOf(it)), it.when ? "On " + it.when : "", it.deadline ? "Due " + it.deadline : "", it.someday ? "Nice to have" : ""].filter(Boolean)) { const s = document.createElement("span"); s.textContent = t; el.querySelector(".foot").appendChild(s); }
   }
 
   function render() {
     const r = solve();
     $("undo").disabled = !picks.length;
-    if (!r.ask) { order = order && order.length === r.sorted.length ? order : r.sorted.slice(); return renderResult(); }
+    if (!r.sorted.length) { $("sentmsg").textContent = "Everything in this one is marked done and off your calendar. Nothing left to rank."; document.querySelector("#sent h1").textContent = "All done."; return show("sent"); }
+    if (!r.ask) { order = order && order.length === r.sorted.length && order.every((id) => !done.has(id)) ? order : r.sorted.slice(); return renderResult(); }
     order = null;
     const m = byId(), flip = picks.length % 2 === 1;
     pending = flip ? [r.ask[1], r.ask[0]] : r.ask.slice();
     pending.newcomer = r.ask[0];
     card($("A"), m.get(pending[0])); card($("B"), m.get(pending[1]));
     $("pickno").textContent = "Pick " + pad(picks.length + 1);
-    $("placed").textContent = pad(r.placed) + " / " + pad(S.items.length);
-    $("fill").style.width = Math.round((r.placed / S.items.length) * 100) + "%";
+    const n = live().length;
+    $("placed").textContent = pad(r.placed) + " / " + pad(n);
+    $("fill").style.width = Math.round((r.placed / n) * 100) + "%";
+    for (const b of [$("dA"), $("dB")]) { b.classList.remove("sure"); b.textContent = "Already did this"; b.disabled = false; }
     show("rank");
   }
 
@@ -254,6 +269,23 @@
     setTimeout(() => { el.classList.remove("pick"); picks.push(p); save(); render(); }, tie ? 0 : 130);
   }
 
+  // "Already did this": tap twice. It comes off the calendar and is logged as done right then, and leaves the ranking.
+  async function markDone(id, btn) {
+    if (!btn.classList.contains("sure")) { btn.classList.add("sure"); btn.textContent = "Tap again: done, take it off my calendar"; setTimeout(() => { if (btn.isConnected && !btn.disabled) { btn.classList.remove("sure"); btn.textContent = "Already did this"; } }, 4000); return; }
+    btn.disabled = true; btn.textContent = "Marking done...";
+    try {
+      if (!demo) {
+        const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done_id: id }) });
+        if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "Couldn't mark it done");
+      }
+      done.add(id); pending = null;
+      // From the final list, the rest of the order stands as is; mid-ranking, the sort carries on without it.
+      if (order && $("result").classList.contains("on")) { order = order.filter((x) => x !== id); if (order.length) return renderResult(); }
+      order = null; render();
+    } catch (e) { btn.disabled = false; btn.classList.remove("sure"); btn.textContent = (e.message || "Couldn't mark it done") + ". Try again"; }
+  }
+  const STEPS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360, 480];
+
   function renderResult() {
     const m = byId(), list = $("list"); list.innerHTML = "";
     order.forEach((id, i) => {
@@ -261,12 +293,20 @@
       const n = document.createElement("span"); n.className = "n"; n.textContent = pad(i + 1);
       const t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
       const sm = document.createElement("small"); sm.textContent = [it.client || "3iM", it.when].filter(Boolean).join(" · "); t.appendChild(sm);
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const sel = document.createElement("select"); sel.setAttribute("aria-label", "How long it will take");
+      for (const mm of [...new Set([...STEPS, it.minutes, minsOf(it)])].sort((a, b) => a - b)) { const o = document.createElement("option"); o.value = mm; o.textContent = hm(mm) + (mm === it.minutes ? " (Sol's guess)" : ""); sel.appendChild(o); }
+      sel.value = minsOf(it); sel.classList.toggle("set", minsOf(it) !== it.minutes);
+      sel.onchange = () => { const v = +sel.value; if (v === it.minutes) delete mins[id]; else mins[id] = v; save(); renderResult(); };
+      const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
+      ctl.append(sel, dn); t.appendChild(ctl);
       const mv = document.createElement("div"); mv.className = "mv";
       for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down"); b.disabled = i + d < 0 || i + d >= order.length;
         b.onclick = () => { [order[i], order[i + d]] = [order[i + d], order[i]]; renderResult(); }; mv.appendChild(b); }
       row.append(n, t, mv); list.appendChild(row);
     });
     $("sendn").textContent = pad(order.length) + " tasks";
+    $("total").textContent = hm(order.reduce((a, x) => a + minsOf(m.get(x)), 0)) + " of work";
     $("senderr").textContent = "";
     show("result");
   }
@@ -276,7 +316,7 @@
     try {
       if (!demo) {
         clearTimeout(saveTimer);
-        const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks, order, done: true }) });
+        const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks, order, minutes: mins, done: true }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok && r.status !== 409) throw new Error(j.error || "It didn't send. Try again.");
       } else $("sentmsg").textContent = "This was a demo, so nothing was sent or moved.";
@@ -302,9 +342,10 @@
     const all = S.scope === "all";
     $("scope").textContent = all ? "All work" : S.scope;
     if (S.status !== "open") { order = S.order; $("sentmsg").textContent = "This one was already sent. Ask Sol for a fresh stack rank if things changed."; return show("sent"); }
-    const local = (store.get("sr:" + token) || {}).picks || [];
+    const saved = store.get("sr:" + token) || {}, local = saved.picks || [];
     picks = (S.picks || []).length >= local.length ? (S.picks || []) : local;
-    const n = S.items.length;
+    mins = saved.mins || {}; done = new Set(S.done || []);
+    const n = live().length;
     $("count").textContent = pad(n) + " tasks";
     $("headline").textContent = all ? "Everything on your plate. What goes first?" : "Every " + S.scope + " task. What goes first?";
     $("lede").textContent = "Two tasks at a time. Tap the one that should come first. Sol starts from the RUBRIC's order, so the more you agree with it, the fewer picks it takes.";
@@ -315,6 +356,7 @@
 
   $("start").onclick = render;
   $("A").onclick = () => choose(0); $("B").onclick = () => choose(1);
+  $("dA").onclick = () => pending && markDone(pending[0], $("dA")); $("dB").onclick = () => pending && markDone(pending[1], $("dB"));
   $("tie").onclick = () => choose(0, true);
   $("undo").onclick = () => { if (picks.length) { picks.pop(); order = null; save(); render(); } };
   $("back").onclick = () => { if (picks.length) { picks.pop(); order = null; save(); } render(); };
