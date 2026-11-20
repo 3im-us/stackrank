@@ -460,7 +460,7 @@
   // (it starts on the day it's already on); it leaves the ranking and no repack will ever move it.
   function pinTo(id, btn) {
     const it = byId().get(id) || {}, box = document.createElement("span"), inp = document.createElement("input"), go = document.createElement("button");
-    box.className = "pinbox"; inp.type = "date"; inp.value = it.at ? new Date(it.at).toLocaleDateString("en-CA") : ""; go.className = "did sure"; go.textContent = "Pin";
+    box.className = "pinbox"; inp.type = "date"; inp.value = it.at ? new Date(it.at).toLocaleDateString("en-CA") : ""; go.className = "did sure"; go.textContent = "Pin it and take it out of the ranking";
     box.append(inp, go); btn.hidden = true; btn.after(box);
     go.onclick = async () => { if (!inp.value) return; go.disabled = true; go.textContent = "Pinning...";
       try {
