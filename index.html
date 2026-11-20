@@ -159,27 +159,22 @@
   .grp[data-sam] > .tile { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.2) 0 5px, transparent 5px 13px); }
   .grp[data-sam] > .tile b::after { content: "SAM"; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; font-weight: 400; margin-left: 8px; padding: 2px 5px; border: 1px solid currentColor; vertical-align: middle; opacity: .8; }
   /* Inside a Space: Projects, and tasks under them. */
-  .space { position: absolute; inset: 0; z-index: 40; background: #ECEAEB; overflow-y: auto; display: none; cursor: default; padding: 16px 16px 110px; touch-action: pan-y; -webkit-overflow-scrolling: touch; user-select: text; -webkit-user-select: text; }
-  .space.on { display: block; }
-  .space .in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-  .sp-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .sp-head h2 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 44px; line-height: 1; letter-spacing: -.02em; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .space { position: absolute; inset: 0; z-index: 40; background: #ECEAEB; display: none; flex-direction: column; cursor: default; touch-action: none; }
+  .space.on { display: flex; }
+  .sp-bar { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; padding: 12px 12px 8px; }
+  .sp-bar h2 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 38px; line-height: 1; letter-spacing: -.02em; flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
   .sp-btn { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: var(--white); padding: 10px 12px; display: inline-flex; gap: 8px; align-items: center; }
   .sp-btn i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); }
+  .sp-info { padding: 0 12px 8px; display: grid; gap: 4px; }
   .sp-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; line-height: 1.5; }
   .sp-err { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--orange); line-height: 1.5; } .sp-err:empty { display: none; }
-  .sp-box { background: var(--white); }
-  .sp-ph { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; }
-  .sp-ph b { flex: 1; font-weight: 500; font-size: 20px; letter-spacing: -.02em; overflow-wrap: anywhere; }
-  .sp-ph .tw { font-family: var(--mono); width: 14px; transition: transform .2s; } .sp-box.shut .sp-ph .tw { transform: rotate(-90deg); }
-  .sp-ph .n, .sp-ph .ed { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .6; } .sp-ph .ed { text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; }
-  .sp-box.shut .sp-pt { display: none; }
-  .sp-task { display: flex; width: 100%; text-align: left; gap: 12px; align-items: baseline; padding: 12px 14px; border-top: 1px solid rgba(29,29,27,.1); font-size: 16px; }
-  .sp-task span { flex: 1; overflow-wrap: anywhere; } .sp-task small { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; opacity: .6; white-space: nowrap; text-transform: uppercase; }
-  .sp-task.wait { opacity: .45; } .sp-task.bad small { color: var(--orange); opacity: 1; white-space: normal; text-align: right; }
-  .sp-add { display: flex; border-top: 1px solid rgba(29,29,27,.1); }
-  .sp-add input, .sp-newp input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 13px 14px; background: transparent; border: 0; outline: 0; color: var(--ink); border-radius: 0; }
-  .sp-newp { display: flex; border: 1.5px dashed rgba(29,29,27,.45); } .sp-newp button, .sp-add button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 0 14px; }
+  .sp-newp { display: flex; border: 1.5px dashed rgba(29,29,27,.45); flex: 0 1 260px; max-width: 100%; min-width: 0; box-sizing: border-box; } .sp-newp button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 0 12px; white-space: nowrap; }
+  .sp-newp input { flex: 1; min-width: 0; width: 0; font: inherit; font-size: 16px; padding: 9px 12px; background: transparent; border: 0; outline: 0; color: var(--ink); border-radius: 0; }
+  .sboard { position: relative; flex: 1; overflow: hidden; cursor: grab; user-select: none; -webkit-user-select: none; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); border-top: 1.5px solid rgba(29,29,27,.12); }
+  .sworld { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+  .grp.pj.drop > .tile { outline: 2.5px dashed var(--ink); outline-offset: 4px; }
+  .grp.pj .chip.wait { opacity: .5; } .grp.pj .chip.bad small { color: var(--orange); opacity: 1; white-space: normal; } .grp.pj .chip.hold { opacity: .3; }
+  .padd { display: flex; } .padd input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 7px 10px; background: transparent; border: 1.5px dashed rgba(29,29,27,.35); border-radius: 12px; outline: 0; color: var(--ink); }
   .sheet .acts { display: flex; flex-wrap: wrap; gap: 6px 18px; } .sheet .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
   .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 50; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
@@ -215,7 +210,7 @@
   body.full .board { height: calc(100dvh - env(safe-area-inset-top)); min-height: 0; } body.full #map { gap: 0; } body.full #maperr:empty { display: none; }
   @media (max-width: 600px) {
     .chip .ctitle, .irow { font-size: 16px; } .chip small { font-size: 10.5px; } .tile .ct { font-size: 11.5px; } .tasks .ph { font-size: 12px; padding-top: 9px; }
-    .hud.count { top: 34px !important; } .sp-head h2 { font-size: 36px; } .sp-task { font-size: 17px; padding: 14px; } .space { padding: 14px 12px 110px; }
+    .hud.count { top: 34px !important; } .sp-bar h2 { font-size: 32px; } .padd input { font-size: 16px; } .sp-newp { flex-basis: 100%; }
     .hud.zoom button { min-width: 44px; height: 44px; } .hud.zoom { bottom: 44px !important; } .hint { bottom: 96px !important; }
   }
   .board.notasks .tile .ct::after, .grp.new .tile .ct::after, .grp.parked .tile .ct::after { content: none !important; }
@@ -641,7 +636,7 @@
   document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("full")) { document.body.classList.remove("full"); $("zfull").textContent = "Full"; } });
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
-  $("space").addEventListener("wheel", (e) => e.stopPropagation());
+  for (const ev of ["wheel", "pointerdown"]) $("space").addEventListener(ev, (e) => e.stopPropagation());
   function head(title) { const h = document.createElement("h3"), t = document.createElement("span"), x = document.createElement("button"); t.textContent = title; x.textContent = "Done"; x.onclick = closeSheet; h.append(t, x); return h; }
   // Tap a card: which group is it?
   function cardSheet(g) {
@@ -763,7 +758,7 @@
   }
   function dropTask(id) { M.tasks = M.tasks.filter((x) => x.id !== id); const c = world.querySelector(`.chip[data-id="${id}"]`); if (c) c.remove(); counts(); autosave(); }
   function openSpace(g) {
-    SP = g; spErr = ""; closeSheet(); renderSpace(); spaceEl.classList.add("on"); spaceEl.scrollTop = 0; buzz(6);
+    SP = g; spErr = ""; closeSheet(); sFitFor = null; spaceEl.classList.add("on"); renderSpace(); buzz(6);
     if (!calm) { const r = g.querySelector(".tile").getBoundingClientRect(), b = board.getBoundingClientRect(); spaceEl.style.transformOrigin = `${r.left + r.width / 2 - b.left}px ${r.top + r.height / 2 - b.top}px`;
       spaceEl.animate([{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: ease }); }
   }
@@ -772,42 +767,101 @@
     if (calm) return spaceEl.classList.remove("on");
     spaceEl.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.6)" }], { duration: 220, easing: "ease-in" }).onfinish = () => { if (!SP) spaceEl.classList.remove("on"); };
   }
+  // Inside a Space is its own small board (Zach, Nov 19): each Project is a card he drags anywhere, with its tasks
+  // under it (tap the right side to fold them). "No project" holds what's loose. Drag a task onto another card to
+  // file it; tap a task or a Project's name to edit it.
+  let SV = { x: 0, y: 0, k: 1 }, sAct = null, sPinch = null, sFitFor = null; const sPts = new Map();
+  const sView = () => { const w = spaceEl.querySelector(".sworld"), b = spaceEl.querySelector(".sboard"); if (!w) return; w.style.transform = `translate(${SV.x}px,${SV.y}px) scale(${SV.k})`; const d = 30 * SV.k; b.style.backgroundSize = d + "px " + d + "px"; b.style.backgroundPosition = SV.x + "px " + SV.y + "px"; };
+  const sZoom = (cx, cy, k) => { k = Math.max(.3, Math.min(2, k)); SV.x = cx - (cx - SV.x) * (k / SV.k); SV.y = cy - (cy - SV.y) * (k / SV.k); SV.k = k; sView(); };
+  function sFit() {
+    const b = spaceEl.querySelector(".sboard"), cs = [...spaceEl.querySelectorAll(".sworld .grp")]; if (!b || !cs.length) return;
+    const r = b.getBoundingClientRect(); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const c of cs) { const x = parseFloat(c.style.left), y = parseFloat(c.style.top); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + W); y1 = Math.max(y1, y + c.offsetHeight); }
+    const pad = r.width < 600 ? 20 : 60, k = Math.max(r.width < 600 ? .8 : .5, Math.min(1.1, (r.width - pad * 2) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)));
+    SV = { k, x: Math.max(pad, r.width / 2 - ((x0 + x1) / 2) * k) > pad && (x1 - x0) * k <= r.width - pad * 2 ? r.width / 2 - ((x0 + x1) / 2) * k : pad - x0 * k, y: pad - y0 * k }; sView();
+  }
   function renderSpace() {
     if (!SP) return;
-    // Keep what he's typing through a redraw.
     const a = document.activeElement, keep = a && spaceEl.contains(a) && a.dataset.key ? { key: a.dataset.key, v: a.value } : null;
     const name = SP.dataset.name, gr = groupFor(name), el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text !== undefined) x.textContent = text; return x; };
     const ids = [...SP.querySelectorAll(".chip")].map((c) => +c.dataset.id);
     const projects = (M.projects || []).filter((p) => p.space === name).sort((x, y) => x.pos - y.pos || x.id - y.id), pid = new Set(projects.map((p) => p.id));
     const all = [...ids.map(taskOf).filter(Boolean), ...(M.items || []).filter((i) => i.space === name)];
     const under = (id) => all.filter((t) => (pid.has(t.project_id) ? t.project_id : null) === id);
-    const box = el("div", "in");
-    const hd = el("div", "sp-head"), back = el("button", "sp-btn", "\u2190 Map"), h2 = el("h2", "", name), ar = el("button", "sp-btn");
+    const bar = el("div", "sp-bar"), back = el("button", "sp-btn", "← Map"), h2 = el("h2", "", name), ar = el("button", "sp-btn");
     if (!tracked()) { h2.style.cursor = "pointer"; h2.title = "Rename"; h2.onclick = () => spaceSheet(); }
     back.onclick = closeSpace; const dot = el("i"); dot.style.setProperty("--bg", gr ? COLORS[gr.color][0] : "#E1DFE0"); ar.append(dot, gr ? gr.name : "No area"); ar.onclick = () => cardSheet(SP);
-    hd.append(back, h2, ar); box.appendChild(hd);
-    box.appendChild(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."));
-    box.appendChild(el("p", "sp-err", spErr));
-    const row = (t) => { const b = el("button", "sp-task"), meta = t.kind === "item" ? (t.on_calendar ? "On " + t.on_calendar : "") : [hm(t.minutes), (t.when || "").split(", ").slice(0, 2).join(", "), t.due ? "due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : ""].filter(Boolean).join(" \u00b7 ");
-      b.append(el("span", "", t.title), el("small", "", meta)); b.onclick = () => taskSheet(t); return b; };
-    const adder = (projectId) => { const f = el("form", "sp-add"), inp = el("input"); inp.placeholder = projectId ? "Add a task to this project" : "Add a task"; inp.maxLength = 120; inp.autocomplete = "off"; inp.enterKeyHint = "done"; inp.dataset.key = "t" + (projectId || 0);
-      f.appendChild(inp); f.onsubmit = (e) => { e.preventDefault(); const v = inp.value.replace(/\s+/g, " ").trim(); if (!v) return; inp.value = ""; addTask(name, projectId, v); }; return f; };
-    const waiting = (projectId) => pend.filter((q) => q.space === name && (q.project_id || null) === projectId).map((q) => { const b = el("div", "sp-task " + (q.err ? "bad" : "wait")); b.append(el("span", "", q.title), el("small", "", q.err || (tracked() ? "Adding to your calendar" : "Adding")));
-      if (q.err) { b.style.cursor = "pointer"; b.onclick = () => { pend = pend.filter((x) => x !== q); renderSpace(); }; } return b; });
-    const loose = el("div", "sp-box"); for (const t of under(null)) loose.appendChild(row(t)); loose.append(...waiting(null), adder(null)); loose.firstChild.style.borderTop = "0"; box.appendChild(loose);
-    for (const p of projects) {
-      const bx = el("div", "sp-box" + (pshut.has(p.id) ? " shut" : "")), ph = el("div", "sp-ph"), ts = under(p.id), ed = el("button", "ed", "Edit"), pt = el("div", "sp-pt");
-      ph.append(el("span", "tw", "\u25BE"), el("b", "", p.name), el("span", "n", ts.length ? ts.length + (ts.length === 1 ? " task" : " tasks") : ""), ed);
-      ph.onclick = (e) => { if (e.target === ed) return projectSheet(p, projects); if (pshut.has(p.id)) pshut.delete(p.id); else pshut.add(p.id); store.set("sr:pshut", [...pshut]); bx.classList.toggle("shut"); buzz(4); };
-      for (const t of ts) pt.appendChild(row(t)); pt.append(...waiting(p.id), adder(p.id)); bx.append(ph, pt); box.appendChild(bx);
-    }
     const np = el("form", "sp-newp"), ni = el("input"), nb = el("button", "", "Add project"); ni.placeholder = "New project"; ni.maxLength = 40; ni.autocomplete = "off"; ni.dataset.key = "newp"; nb.type = "submit"; np.append(ni, nb);
-    np.onsubmit = async (e) => { e.preventDefault(); const v = ni.value.replace(/\s+/g, " ").trim(); if (!v) return; ni.value = ""; say("");
-      try { const r = await spCall({ op: "add_project", space: name, name: v }); if (!M.projects.some((p) => p.id === r.project.id)) M.projects.push(r.project); renderSpace(); const f = spaceEl.querySelector(`[data-key="t${r.project.id}"]`); if (f) f.focus(); } catch (err) { say(err.message); } };
-    box.appendChild(np);
-    spaceEl.innerHTML = ""; spaceEl.appendChild(box); relayout();
-    if (keep) { const f = spaceEl.querySelector(`[data-key="${keep.key}"]`); if (f) { f.value = keep.v; f.focus(); } }
+    np.onsubmit = async (e) => { e.preventDefault(); const v = ni.value.replace(/\s+/g, " ").trim(); if (!v) return; ni.value = ""; ni.blur(); say("");
+      try { const r = await spCall({ op: "add_project", space: name, name: v }); if (!M.projects.some((p) => p.id === r.project.id)) { const b = spaceEl.querySelector(".sboard").getBoundingClientRect();
+          const q = { ...r.project, x: Math.round((b.width / 2 - SV.x) / SV.k - W / 2 + Math.random() * 60 - 30), y: Math.round((b.height / 2 - SV.y) / SV.k - 40 + Math.random() * 40 - 20) }; M.projects.push(q); if (!demo) spCall({ op: "place_project", id: q.id, x: q.x, y: q.y }).catch(() => {}); }
+        renderSpace(); } catch (err) { say(err.message); } };
+    const fitb = el("button", "sp-btn", "Fit"); fitb.onclick = sFit;
+    bar.append(back, h2, ar, np, fitb);
+    const info = el("div", "sp-info"); info.append(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."), el("p", "sp-err", spErr));
+    const sb = el("div", "sboard"), sw = el("div", "sworld"); sb.appendChild(sw);
+    const loosePos = (store.get("sr:loose") || {})[name] || { x: 0, y: 0 };
+    const schip = (t) => { const c = el("div", "chip"); c.dataset.id = t.id; c.dataset.kind = t.kind || "task";
+      const meta = t.kind === "item" ? (t.on_calendar ? "On " + t.on_calendar : "") : hm(t.minutes) + (t.due ? " · due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : "");
+      c.append(el("span", "ctitle", t.title), el("small", "", meta)); return c; };
+    const card = (p, k) => { const id = p ? p.id : 0, g = el("div", "grp pj"), tile = el("div", "tile"), ts = under(p ? p.id : null), box = el("div", "tasks"), f = el("form", "padd"), inp = el("input");
+      g.dataset.pid = id; g.dataset.has = "1"; if (pshut.has(id)) g.dataset.shut = "1";
+      const at = p ? (Number.isFinite(p.x) && Number.isFinite(p.y) ? p : { x: 340 * (1 + (k % 3)), y: Math.floor(k / 3) * 260 }) : loosePos; g.style.left = at.x + "px"; g.style.top = at.y + "px";
+      const c = p ? COLORS[gr ? gr.color : "white"] || COLORS.white : ["#FFFFFF", "#1D1D1B"]; g.style.setProperty("--bg", p && !gr ? "#E1DFE0" : c[0]); g.style.setProperty("--fg", p && !gr ? "#1D1D1B" : c[1]);
+      tile.append(el("b", "", p ? p.name : "No project"), el("span", "ct mono", ts.length ? ts.length + (ts.length === 1 ? " task" : " tasks") : ""));
+      for (const t of ts) box.appendChild(schip(t));
+      for (const q of pend.filter((q) => q.space === name && (q.project_id || 0) === id)) { const w = el("div", "chip " + (q.err ? "bad" : "wait")); w.append(el("span", "ctitle", q.title), el("small", "", q.err || "Adding")); if (q.err) w.onclick = () => { pend = pend.filter((x) => x !== q); renderSpace(); }; box.appendChild(w); }
+      inp.placeholder = "+ task"; inp.maxLength = 120; inp.autocomplete = "off"; inp.enterKeyHint = "done"; inp.dataset.key = "t" + id; f.appendChild(inp); box.appendChild(f);
+      f.onsubmit = (e) => { e.preventDefault(); const v = inp.value.replace(/\s+/g, " ").trim(); if (!v) return; inp.value = ""; addTask(name, id || null, v); };
+      g.append(tile, box); sw.appendChild(g); };
+    card(null, 0); projects.forEach((p, k) => card(p, k));
+    spaceEl.innerHTML = ""; spaceEl.append(bar, info, sb); relayout();
+    if (sFitFor !== name) { sFitFor = name; sFit(); } else sView();
+    if (keep) { const f = spaceEl.querySelector(`[data-key="${keep.key}"]`); if (f) { f.value = keep.v; f.focus({ preventScroll: true }); } }
   }
+  // One set of pointer handlers for the Space's board: drag a Project, drag a task onto another Project, pan, pinch.
+  spaceEl.addEventListener("pointerdown", (e) => {
+    const sb = e.target.closest(".sboard"); if (!sb || e.target.closest("input, form") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (sheet.classList.contains("on")) closeSheet();
+    if (document.activeElement && spaceEl.contains(document.activeElement)) document.activeElement.blur();
+    sPts.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { sb.setPointerCapture(e.pointerId); } catch {}
+    if (sPts.size === 2) { if (sAct && sAct.ghost) sAct.ghost.remove(); sAct = null; const [a, b] = [...sPts.values()]; sPinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: SV.k }; return; }
+    const ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), g = e.target.closest(".grp");
+    sAct = { kind: ch && !ch.classList.contains("wait") && !ch.classList.contains("bad") ? "chip" : tile ? "grp" : ch ? "none" : "pan", el: ch || g, x0: e.clientX, y0: e.clientY, moved: false, vx: SV.x, vy: SV.y, onCt: !!e.target.closest(".ct"), sb };
+    if (sAct.kind === "grp") { sAct.gx = parseFloat(g.style.left); sAct.gy = parseFloat(g.style.top); }
+  });
+  spaceEl.addEventListener("pointermove", (e) => {
+    if (!sPts.has(e.pointerId)) return; sPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (sPinch && sPts.size === 2) { const [a, b] = [...sPts.values()], r = spaceEl.querySelector(".sboard").getBoundingClientRect(); return sZoom((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, sPinch.k * Math.hypot(a.x - b.x, a.y - b.y) / sPinch.d); }
+    if (!sAct || sAct.kind === "none") return; const dx = e.clientX - sAct.x0, dy = e.clientY - sAct.y0;
+    if (!sAct.moved) { if (Math.hypot(dx, dy) < 5) return; sAct.moved = true;
+      if (sAct.kind === "grp") { sAct.el.classList.add("lift"); sAct.el.style.transition = "none"; }
+      if (sAct.kind === "chip") { const r = sAct.el.getBoundingClientRect(), g = sAct.el.cloneNode(true); g.classList.add("ghost"); g.style.cssText += `;position:fixed;left:${r.left}px;top:${r.top}px;width:${sAct.el.offsetWidth}px;margin:0;z-index:60;pointer-events:none;transform-origin:0 0;transform:scale(${SV.k})`; document.body.appendChild(g); sAct.el.classList.add("hold"); sAct.ghost = g; sAct.ox = sAct.x0 - r.left; sAct.oy = sAct.y0 - r.top; buzz(6); } }
+    if (sAct.kind === "pan") { SV.x = sAct.vx + dx; SV.y = sAct.vy + dy; sView(); }
+    else if (sAct.kind === "grp") { sAct.el.style.left = sAct.gx + dx / SV.k + "px"; sAct.el.style.top = sAct.gy + dy / SV.k + "px"; }
+    else if (sAct.kind === "chip") { sAct.ghost.style.left = e.clientX - sAct.ox + "px"; sAct.ghost.style.top = e.clientY - sAct.oy + "px";
+      const over = document.elementFromPoint(e.clientX, e.clientY), g = over && over.closest(".sworld .grp"); spaceEl.querySelectorAll(".grp.drop").forEach((x) => x !== g && x.classList.remove("drop")); if (g) g.classList.add("drop"); }
+  });
+  const sUp = (e) => {
+    sPts.delete(e.pointerId); if (sPts.size < 2) sPinch = null;
+    const A = sAct; sAct = null; if (!A || !SP) return;
+    const name = SP.dataset.name;
+    if (A.kind === "grp") { A.el.classList.remove("lift"); A.el.style.transition = ""; const id = +A.el.dataset.pid;
+      if (A.moved) { const x = Math.round(parseFloat(A.el.style.left)), y = Math.round(parseFloat(A.el.style.top));
+        if (id) { const p = M.projects.find((q) => q.id === id); if (p) { p.x = x; p.y = y; } if (!demo) spCall({ op: "place_project", id, x, y }).catch(() => {}); }
+        else { const all = store.get("sr:loose") || {}; all[name] = { x, y }; store.set("sr:loose", all); } }
+      else if (A.onCt) { if (pshut.has(id)) pshut.delete(id); else pshut.add(id); store.set("sr:pshut", [...pshut]); buzz(4); renderSpace(); }
+      else if (id) projectSheet(M.projects.find((q) => q.id === id), M.projects.filter((q) => q.space === name)); }
+    if (A.kind === "chip") { const id = +A.el.dataset.id, t = A.el.dataset.kind === "item" ? M.items.find((i) => i.id === id) : taskOf(id);
+      if (!A.moved) { if (t) taskSheet(t); return; }
+      A.ghost.remove(); A.el.classList.remove("hold"); const g = spaceEl.querySelector(".grp.drop"); if (g) g.classList.remove("drop");
+      if (!g || !t) return; const to = +g.dataset.pid || null, was = M.projects.some((p) => p.id === t.project_id && p.space === name) ? t.project_id : null;
+      if (to === was) return; t.project_id = to; buzz(8); renderSpace();
+      spCall({ op: "edit_task", id: t.id, kind: t.kind || "task", project_id: to }).catch((err) => { t.project_id = was; say(err.message); renderSpace(); }); }
+  };
+  spaceEl.addEventListener("pointerup", sUp); spaceEl.addEventListener("pointercancel", sUp);
+  spaceEl.addEventListener("wheel", (e) => { const sb = e.target.closest(".sboard"); if (!sb) return; e.preventDefault(); const r = sb.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey) sZoom(e.clientX - r.left, e.clientY - r.top, SV.k * Math.exp(-e.deltaY * .012)); else { SV.x -= e.deltaX; SV.y -= e.deltaY; sView(); } }, { passive: false });
   // Adding is queued, so he can keep typing a brain dump while each one lands on the calendar.
   function addTask(space, projectId, title) {
     const q = { space, project_id: projectId, title }; pend.push(q); say(""); renderSpace();
@@ -1049,7 +1103,7 @@
     $("scope").textContent = "Mind map"; $("maperr").textContent = "";
     if (demo) M = { at: null, calendars: ["Business", "Personal", "Roseburg", "Family", "Health"], order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
       tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i, project_id: (t.client || "") === "Clay" && i % 2 ? 1 : null })),
-      projects: [{ id: 1, space: "Clay", name: "Black Friday", pos: 0 }, { id: 2, space: "Clay", name: "New Member Flow", pos: 1 }], items: [], sams: ["GRLSWIRL"] };
+      projects: [{ id: 1, space: "Clay", name: "Black Friday", pos: 0, x: 360, y: 20 }, { id: 2, space: "Clay", name: "New Member Flow", pos: 1, x: 200, y: 260 }], items: [], sams: ["GRLSWIRL"] };
     else {
       show("load");
       let r; try { r = await fetch(API + "?map=1&k=" + encodeURIComponent(key)); } catch { return fail("Can't reach Sol.", "Check your connection and reload"); }
