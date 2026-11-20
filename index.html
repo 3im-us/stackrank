@@ -984,7 +984,10 @@
     const ti = document.createElement("input"); ti.value = t.title; ti.maxLength = 120; sheet.appendChild(field("Name", ti));
     let mi = null, di = null;
     if (t.kind !== "item") { const two = document.createElement("div"); two.className = "two"; mi = document.createElement("input"); mi.type = "number"; mi.min = 5; mi.max = 600; mi.step = 5; mi.inputMode = "numeric"; mi.value = t.minutes;
-      di = document.createElement("input"); di.type = "date"; di.value = t.dueDay || ""; two.append(field("Minutes", mi), field("Due", di)); sheet.appendChild(two); }
+      di = document.createElement("input"); di.type = "date"; di.value = t.dueDay || ""; two.append(field("Minutes", mi), field("Due by", di)); sheet.appendChild(two); }
+    // Happens on this day (Zach, Nov 20): pinned. It stays on that day, is never ranked and never moved. Clear it to unpin.
+    let pi = null;
+    if (t.kind !== "item") { pi = document.createElement("input"); pi.type = "date"; pi.value = t.pinDay || ""; sheet.appendChild(field("Happens on this day (pinned, never ranked or moved)", pi)); }
     const ps = document.createElement("select"); for (const p of [null, ...projects]) { const o = document.createElement("option"); o.value = p ? p.id : ""; o.textContent = p ? p.name : "No project"; ps.appendChild(o); }
     ps.value = projects.some((p) => p.id === t.project_id) ? t.project_id : ""; sheet.appendChild(field("Project", ps));
     // Move to another Space. A map-only thing can only go to a Space that isn't 3iM work.
@@ -1007,6 +1010,7 @@
       if (v && v !== t.title) op.title = v;
       if (mi && +mi.value >= 5 && +mi.value !== t.minutes) op.minutes = Math.round(+mi.value);
       if (di && di.value !== (t.dueDay || "")) op.due = di.value;
+      if (pi && pi.value !== (t.pinDay || "")) op.pin = pi.value;
       if (rs && rs.value) { closeSheet(); say("");
         try { const r = await spCall({ op: "repeat_task", id: t.id, freq: rs.value }); if (r.item) { dropTask(t.id); M.items.push(r.item); counts(); say(`${t.title} now repeats.`); } } catch (e) { say(e.message); }
         return renderSpace(); }
