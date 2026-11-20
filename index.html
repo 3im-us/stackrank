@@ -132,20 +132,34 @@
   .grp { position: absolute; width: 300px; z-index: 2; }
   .grp.tidy { transition: left .55s cubic-bezier(.2,.85,.2,1), top .55s cubic-bezier(.2,.85,.2,1); }
   .grp.lift { z-index: 9; }
-  .tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 16px; background: var(--white); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
+  .tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 16px; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
   .grp:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
   .grp:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
   .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 23px; overflow-wrap: anywhere; }
-  .tile .rk { color: var(--orange); font-size: 12px; letter-spacing: .12em; min-width: 20px; }
+  .tile .rk { font-size: 12px; letter-spacing: .12em; min-width: 20px; opacity: .75; }
   .tile .ct { opacity: .6; white-space: nowrap; font-size: 10px; }
   .tile .x { font-family: var(--mono); font-size: 15px; padding: 2px 6px; opacity: .6; }
   .grp.new { width: max-content; max-width: 300px; }
-  .grp.new > .tile { transform: rotate(var(--rot, 0deg)); padding: 12px 15px; background: var(--fog); box-shadow: 0 2px 0 rgba(29,29,27,.18); }
-  .grp.new:nth-child(4n+1) > .tile { background: var(--pink); } .grp.new:nth-child(4n+3) > .tile { background: var(--ink); color: var(--white); }
-  .grp.r1 > .tile { background: var(--orange); transform: scale(1.14); } .grp.r1 .rk { color: var(--ink); }
-  .grp.r2 > .tile { background: var(--ink); color: var(--white); transform: scale(1.08); }
-  .grp.r3 > .tile { transform: scale(1.03); }
-  .grp.parked > .tile { background: transparent; box-shadow: none; outline: 1.5px solid rgba(29,29,27,.35); opacity: .75; } .grp.parked .rk { display: none; }
+  .grp.new > .tile { transform: rotate(var(--rot, 0deg)); padding: 12px 15px; box-shadow: 0 2px 0 rgba(29,29,27,.18); }
+  /* Color is the group now; rank shows as size, the number, and a ring on the top one. */
+  .grp.r1 > .tile { transform: scale(1.16); outline: 2.5px solid var(--ink); outline-offset: 4px; }
+  .grp.r2 > .tile { transform: scale(1.09); }
+  .grp.r3 > .tile { transform: scale(1.04); }
+  .grp.parked > .tile { opacity: .5; box-shadow: none; } .grp.parked .rk { display: none; }
+  .legend { left: 10px; top: 36px; right: 150px; flex-wrap: wrap; gap: 5px; }
+  .legend button { display: inline-flex; align-items: center; gap: 7px; background: var(--white); padding: 6px 10px 6px 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; }
+  .legend button i, .pick button i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); flex: none; }
+  .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 30; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
+  .hud.sheet { display: none; } .hud.sheet.on { display: flex; }
+  .sheet h3 { font-weight: 500; font-size: 22px; letter-spacing: -.02em; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .sheet h3 button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
+  .pick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pick button { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--ink); padding: 9px 12px; font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+  .pick button.on { background: var(--ink); color: var(--white); }
+  .pick.sw button { padding: 0; width: 38px; height: 38px; background: var(--bg); border-width: 1.5px; } .pick.sw button.on { outline: 2.5px solid var(--ink); outline-offset: 3px; }
+  .sheet input, .sheet select { font: inherit; font-size: 16px; border: 1.5px solid var(--ink); background: var(--fog); padding: 11px 12px; border-radius: 0; color: var(--ink); width: 100%; -webkit-appearance: none; appearance: none; }
+  .sheet label { display: grid; gap: 6px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
   .grp.lift > .tile { box-shadow: 0 16px 34px rgba(29,29,27,.24); cursor: grabbing; }
   .tasks { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 0 22px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); }
   .grp.r1 > .tasks { margin-top: 16px; } .grp.r2 > .tasks { margin-top: 13px; }
@@ -157,7 +171,7 @@
   .chip .ctitle { flex: 1; font-weight: 500; font-size: 14px; letter-spacing: -.01em; line-height: 1.15; overflow-wrap: anywhere; }
   .chip small { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; text-transform: uppercase; opacity: .55; white-space: nowrap; }
   .hold { opacity: .22; } .ghost { box-shadow: 0 14px 30px rgba(29,29,27,.22); cursor: grabbing; transform-origin: 0 0; }
-  .axis { position: absolute; left: 10px; top: 12px; bottom: 12px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; opacity: .6; }
+  .axis { position: absolute; left: 10px; top: 10px; bottom: 12px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; opacity: .6; }
   .axis span:first-child::before { content: "\2191  "; } .axis span:last-child::before { content: "\2193  "; }
   .hud { position: absolute; display: flex; gap: 2px; }
   .hud.count { right: 10px; top: 10px; background: var(--white); padding: 7px 10px; pointer-events: none; }
@@ -221,11 +235,13 @@
         <div class="world" id="world"><div class="parkline" id="parkline"><span class="mono">Not on my mind below this line (drag the line)</span></div></div>
         <div class="axis mono"><span>Most on my mind</span><span>Less</span></div>
         <div class="hud count mono" id="mleft"></div>
+        <div class="hud legend" id="legend"></div>
+        <div class="hud sheet" id="sheet"></div>
         <div class="hud zoom"><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
-        <div class="hint mono" id="mhint">Drag things up or down. Pinch or scroll to zoom.</div>
+        <div class="hint mono" id="mhint">Drag things up or down. Sol sorts new things into groups.</div>
       </div>
       <div class="mact">
-        <form class="add" id="addb"><input id="addin" placeholder="Something else on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
+        <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
         <button class="tool" id="mtasks">Hide tasks</button>
         <button class="tool" id="mtidy">Tidy up</button>
         <button class="tool" id="mseal2">Seal + redo my week</button>
@@ -515,7 +531,52 @@
   // A board he pans and zooms, like a design canvas. Every bucket is a card he drags anywhere; how high it sits is how
   // much it's on his mind, and anything below the dashed line is parked. New things arrive tilted in a loose pile and
   // straighten the moment he picks them up. His tasks hang under each bucket and can be reordered or moved across.
-  let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760;
+  let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760, G = [], groupOf = {};
+  // Groups say what kind of thing a bucket is (3iM, another business, music, family, fun...). Each has a color from the
+  // 3iM palette and can point at one of his calendars, which is how Sol knows where that group's things go.
+  const COLORS = { orange: ["#E74B25", "#1D1D1B"], pink: ["#FFC8DA", "#1D1D1B"], ink: ["#1D1D1B", "#FFFFFF"], white: ["#FFFFFF", "#1D1D1B"], peach: ["#F5B5A3", "#1D1D1B"], stone: ["#B9B5B7", "#1D1D1B"] };
+  const groupFor = (name) => G.find((x) => x.id === groupOf[name]) || null;
+  function paint(g) { const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B"); }
+  function legend() {
+    const box = $("legend"); box.innerHTML = "";
+    for (const gr of G) { const b = document.createElement("button"), d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.append(d, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : "")); b.onclick = () => groupSheet(gr); box.appendChild(b); }
+    const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Group"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
+    groups().forEach(paint);
+  }
+  const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
+  for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
+  function head(title) { const h = document.createElement("h3"), t = document.createElement("span"), x = document.createElement("button"); t.textContent = title; x.textContent = "Done"; x.onclick = closeSheet; h.append(t, x); return h; }
+  // Tap a card: which group is it?
+  function cardSheet(g) {
+    sheet.innerHTML = ""; sheet.appendChild(head(g.dataset.name));
+    const row = document.createElement("div"); row.className = "pick";
+    for (const gr of [...G, null]) { const b = document.createElement("button"); if (gr) { const d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.appendChild(d); }
+      b.append(gr ? gr.name : "No group"); if ((gr ? gr.id : undefined) === groupOf[g.dataset.name]) b.classList.add("on");
+      b.onclick = () => { if (gr) groupOf[g.dataset.name] = gr.id; else delete groupOf[g.dataset.name]; paint(g); closeSheet(); buzz(6); }; row.appendChild(b); }
+    const nw = document.createElement("button"); nw.textContent = "+ New group"; nw.style.borderStyle = "dashed";
+    nw.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true, g); };
+    row.appendChild(nw); sheet.appendChild(row); sheet.classList.add("on");
+  }
+  // Tap a group in the legend (or make a new one): its name, color, and calendar.
+  function groupSheet(gr, isNew, forCard) {
+    sheet.innerHTML = ""; const h = head(isNew ? "New group" : "Group"); sheet.appendChild(h);
+    const name = document.createElement("input"); name.placeholder = "Music, Family, Health, Startups..."; name.maxLength = 30; name.value = gr.name;
+    const l1 = document.createElement("label"); l1.append("Name", name);
+    const sw = document.createElement("div"); sw.className = "pick sw";
+    for (const c of Object.keys(COLORS)) { const b = document.createElement("button"); b.style.setProperty("--bg", COLORS[c][0]); b.setAttribute("aria-label", c); if (c === gr.color) b.classList.add("on"); b.onclick = () => { gr.color = c; [...sw.children].forEach((x) => x.classList.toggle("on", x === b)); if (!isNew) legend(); }; sw.appendChild(b); }
+    const l2 = document.createElement("label"); l2.append("Color", sw);
+    const sel = document.createElement("select");
+    for (const c of ["", ...((M && M.calendars) || [])]) { const o = document.createElement("option"); o.value = c; o.textContent = c || "No calendar (Sol will ask)"; sel.appendChild(o); }
+    sel.value = gr.calendar || ""; sel.onchange = () => { gr.calendar = sel.value || null; if (!isNew) legend(); };
+    const l3 = document.createElement("label"); l3.append("Calendar its things go on", sel);
+    sheet.append(l1, l2, l3);
+    const save = () => { gr.name = name.value.replace(/\s+/g, " ").trim(); if (!gr.name) return isNew ? closeSheet() : null; if (isNew) { G.push(gr); if (forCard) groupOf[forCard.dataset.name] = gr.id; } legend(); closeSheet(); };
+    h.querySelector("button").onclick = save; name.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    if (!isNew) { name.oninput = () => { if (name.value.trim()) { gr.name = name.value.trim(); legend(); } };
+      const del = document.createElement("button"); del.className = "did"; del.style.alignSelf = "flex-start"; del.textContent = "Delete this group";
+      del.onclick = () => { G = G.filter((x) => x !== gr); for (const k of Object.keys(groupOf)) if (groupOf[k] === gr.id) delete groupOf[k]; legend(); closeSheet(); }; sheet.appendChild(del); }
+    sheet.classList.add("on"); if (isNew) setTimeout(() => name.focus(), 50);
+  }
   const board = $("board"), world = $("world"), parkline = $("parkline"), W = 300;
   const groups = () => [...world.querySelectorAll(".grp")];
   const gx = (g) => parseFloat(g.style.left) || 0, gy = (g) => parseFloat(g.style.top) || 0;
@@ -560,7 +621,7 @@
     if (b.kind === "project") { const x2 = document.createElement("button"); x2.className = "x"; x2.type = "button"; x2.textContent = "×"; x2.setAttribute("aria-label", "Remove " + b.name);
       x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
-    g.append(t, tl); world.appendChild(g);
+    g.append(t, tl); world.appendChild(g); paint(g);
     return g;
   }
   function chip(t) {
@@ -574,6 +635,7 @@
   const pts = new Map(); let act = null, pinch = null;
   board.addEventListener("pointerdown", (e) => {
     if (e.target.closest(".hud, .x") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (sheet.classList.contains("on")) closeSheet();
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { board.setPointerCapture(e.pointerId); } catch {}
     $("mhint").classList.add("off");
@@ -599,7 +661,7 @@
   const up = (e) => {
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
     if (!act) return;
-    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); }
+    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) cardSheet(act.el); }
     if (act.kind === "chip" && act.moved) chipDrop();
     board.classList.remove("pan"); act = null;
   };
@@ -663,7 +725,7 @@
 
   async function openMap() {
     $("scope").textContent = "Priority map"; $("maperr").textContent = "";
-    if (demo) M = { at: null, order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
+    if (demo) M = { at: null, calendars: ["Business", "Personal", "Roseburg", "Family", "Health"], order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
       tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i })) };
     else {
       show("load");
@@ -671,7 +733,11 @@
       M = await r.json().catch(() => null);
       if (!r.ok || !M || !M.tasks) return fail("Couldn't open the map.", (M && M.error) || "Try again in a minute");
     }
-    groups().forEach((g) => g.remove());
+    groups().forEach((g) => g.remove()); closeSheet();
+    // Groups: as he left them. The first time, one group (3iM, on Business) holding every client and 3iM itself.
+    G = (M.groups || []).filter((x) => COLORS[x.color]).map((x) => ({ ...x })); groupOf = { ...(M.groupOf || {}) };
+    if (!G.length) { G = [{ id: "g3im", name: "3iM", color: "orange", calendar: (M.calendars || []).includes("Business") ? "Business" : null }];
+      for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (b.kind === "client") groupOf[b.name] = "g3im"; for (const n of M.clients || []) groupOf[n] = "g3im"; }
     const pos = M.pos || {}, slim = board.getBoundingClientRect().width < 600;
     const known = [...(M.order || []), ...(M.parked || [])].filter((b) => pos[b.name]);
     for (const b of known) grp(b, pos[b.name].x, pos[b.name].y, false);
@@ -683,6 +749,7 @@
     // First time, the park line sits a little under the pile, with room above it to build the map.
     parkY = M.parkY || py + Math.ceil(loose.length / cols) * 66 + 150;
     for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
+    legend();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
     $("mhint").classList.remove("off"); setTimeout(() => $("mhint").classList.add("off"), 6000);
     show("map"); rerank(); fit(false);
@@ -700,7 +767,7 @@
     for (const g of gs) { pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
     try {
       if (!demo) {
-        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, pos, parkY, tasks, reorganize: !!reorganize } }) });
+        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, pos, parkY, tasks, groups: G, groupOf, reorganize: !!reorganize } }) });
         if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "It didn't save. Try again.");
       }
       sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it. The board stays as you left it.");
