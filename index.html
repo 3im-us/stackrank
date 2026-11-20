@@ -389,7 +389,12 @@
   // It replays from the saved picks every time, which makes undo and switching devices free.
   function solve() {
     const memo = new Map(picks.map((p) => [p.w + "|" + p.l, p]));
-    const beats = (x, y) => memo.has(x + "|" + y) ? true : memo.has(y + "|" + x) ? false : undefined;
+    // What he's already told us also answers pairs he never saw: if A went before B and B before C, A goes before C.
+    // That matters most when a task leaves mid-ranking (pinned, or already done) and the rest get compared in a
+    // different order: his earlier picks still count instead of being asked again.
+    const next = new Map(); for (const p of picks) { if (!next.has(p.w)) next.set(p.w, []); next.get(p.w).push(p.l); }
+    const reach = (from, to) => { const seen = new Set([from]), q = [from]; while (q.length) { for (const n of next.get(q.pop()) || []) { if (n === to) return true; if (!seen.has(n)) { seen.add(n); q.push(n); } } } return false; };
+    const beats = (x, y) => memo.has(x + "|" + y) ? true : memo.has(y + "|" + x) ? false : reach(x, y) ? true : reach(y, x) ? false : undefined;
     const items = live();
     if (!items.length) return { sorted: [], placed: 0 };
     const sorted = [items[0].id];
