@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>3iM Stack Rank</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stack Rank">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E1DFE0">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 100'%3E%3Crect width='60' height='100' rx='9' fill='%231D1D1B'/%3E%3Cellipse cx='30' cy='22' rx='27' ry='18' fill='%23fff'/%3E%3Cellipse cx='30' cy='50' rx='27' ry='18' fill='%23fff'/%3E%3Cellipse cx='30' cy='78' rx='27' ry='18' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,7 +108,63 @@
   .err { color: var(--orange); }
   footer { display: flex; justify-content: space-between; color: var(--orange); padding: 2px 2px 0; }
 
+  /* Home */
+  #home .hero { min-height: 190px; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+  .scopes { display: grid; gap: 2px; }
+  .scope { display: flex; justify-content: space-between; align-items: center; gap: 14px; background: var(--white); padding: 17px 18px; text-align: left; font-weight: 500; font-size: 21px; letter-spacing: -.02em; transition: background .12s, color .12s; }
+  .scope:first-child { background: var(--orange); font-weight: 600; text-transform: uppercase; font-size: 18px; letter-spacing: -.01em; }
+  .scope:active, .scope.busy { background: var(--ink); color: var(--white); }
+  .scope[disabled] { opacity: .45; }
+  .maprow { display: flex; justify-content: space-between; align-items: center; gap: 14px; background: var(--pink); padding: 22px 18px; text-align: left; font-weight: 500; font-size: 24px; letter-spacing: -.02em; width: 100%; }
+  .maprow:active { background: var(--ink); color: var(--white); }
+  .word { cursor: pointer; }
+
+  /* Priority map */
+  #map { gap: 10px; }
+  .mbar { display: flex; justify-content: space-between; gap: 10px; }
+  .mq { font-size: clamp(26px, 5.4vw, 44px); min-height: 2.1em; }
+  .lbl { display: flex; justify-content: space-between; gap: 10px; padding: 10px 2px 0; } .lbl span { opacity: .55; }
+  .pile { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 4px; padding: 14px 8px 18px; min-height: 96px; background: var(--white); position: relative; overflow: hidden; transition: min-height .4s, padding .4s, opacity .4s; }
+  .pile:empty { min-height: 0; padding: 0 8px; opacity: 0; }
+  .node { position: relative; touch-action: manipulation; }
+  .tile { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px; background: var(--white); cursor: grab; user-select: none; -webkit-user-select: none; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; }
+  .node:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
+  .node:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
+  .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 22px; overflow-wrap: anywhere; }
+  .tile .rk { color: var(--orange); font-size: 13px; letter-spacing: .12em; min-width: 22px; }
+  .tile .ct { opacity: .6; white-space: nowrap; }
+  .grip { touch-action: none; cursor: grab; padding: 8px 6px; margin: -8px -4px -8px 0; font-family: var(--mono); font-size: 16px; letter-spacing: -2px; opacity: .45; }
+  .tile .x { font-family: var(--mono); font-size: 14px; padding: 4px 6px; opacity: .6; }
+  .pile .node { margin: -3px; transform: rotate(var(--rot, 0deg)) translateY(var(--ty, 0px)); z-index: var(--z, 1); }
+  .pile .tile { padding: 10px 14px; gap: 8px; box-shadow: 0 1px 0 rgba(29,29,27,.12); background: var(--fog); }
+  .pile .node:nth-child(4n+1) .tile { background: var(--pink); } .pile .node:nth-child(4n+3) .tile { background: var(--ink); color: var(--white); }
+  .pile .tile b { font-size: 18px; } .pile .rk, .pile .grip, .pile .tasks, .tray .tasks { display: none; }
+  .col, .tray { display: flex; flex-direction: column; gap: 8px; min-height: 64px; padding: 2px 0; }
+  .col:empty::after, .tray:empty::after { content: attr(data-empty); font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .5; border: 1.5px dashed rgba(29,29,27,.35); border-radius: 18px; padding: 20px 16px; }
+  .col .node.r1 > .tile { background: var(--orange); padding-top: 20px; padding-bottom: 20px; } .col .node.r1 > .tile b { font-size: 32px; } .col .node.r1 .rk { color: var(--ink); }
+  .col .node.r2 > .tile { background: var(--ink); color: var(--white); padding-top: 17px; padding-bottom: 17px; } .col .node.r2 > .tile b { font-size: 27px; }
+  .col .node.r3 > .tile b { font-size: 24px; }
+  .tray .tile { background: transparent; border: 1.5px solid rgba(29,29,27,.35); opacity: .7; } .tray .tile b { font-size: 18px; } .tray .rk { display: none; }
+  .hold { opacity: .22; } .ghost { box-shadow: 0 14px 30px rgba(29,29,27,.22); border-radius: 20px; cursor: grabbing; } .ghost .tasks { display: none; }
+  .tasks { display: none; flex-direction: column; gap: 5px; margin: 6px 0 4px 26px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); min-height: 30px; }
+  #map.p2 .col .tasks { display: flex; } #map.p2 .pile, #map.p2 .add, #map.p2 #mpark { display: none; }
+  .col .tasks:empty::after { content: "Drop a task here"; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .45; padding: 6px 0; }
+  .chip { position: relative; display: flex; align-items: center; gap: 8px; background: var(--white); padding: 9px 8px 9px 12px; border-radius: 12px 14px 12px 15px; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .chip::before { content: ""; position: absolute; left: -14px; top: 50%; width: 14px; border-top: 1.5px solid var(--ink); }
+  .chip .ctitle { flex: 1; font-weight: 500; font-size: 15.5px; letter-spacing: -.012em; line-height: 1.15; overflow-wrap: anywhere; }
+  .chip small { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; opacity: .55; white-space: nowrap; }
+  .add { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .add input { font: inherit; font-size: 16px; border: 1.5px solid var(--ink); background: var(--fog); padding: 12px 14px; border-radius: 0; min-width: 0; color: var(--ink); }
+  .add input::placeholder { color: rgba(29,29,27,.5); }
+  .mact { display: grid; gap: 10px; margin-top: 8px; }
+  #mseal2 { display: none; } #map.p2 #mseal2 { display: block; }
+
   @media (min-width: 820px) {
+    #home.on { display: grid; grid-template-columns: 1fr 1.2fr; align-items: start; } #home .hero { min-height: 380px; grid-row: span 2; }
+    .scope { padding: 20px 24px; } .maprow { padding: 28px 24px; }
+    #map { max-width: 760px; width: 100%; margin: 0 auto; }
+    .tile b { font-size: 24px; } .col .node.r1 > .tile b { font-size: 40px; } .col .node.r2 > .tile b { font-size: 32px; } .col .node.r3 > .tile b { font-size: 27px; }
+    .mact { grid-template-columns: auto 1fr; } #map.p2 .mact { grid-template-columns: 1fr 1fr; }
     .wrap { padding: 28px; gap: 16px; } main, .screen { gap: 16px; }
     header { min-height: 96px; grid-template-columns: 1fr auto 64px 64px; } header .word { font-size: 68px; padding: 12px 24px 16px; }
     .mark { width: 34px; height: 57px; }
@@ -131,6 +193,35 @@
     <!-- Loading / error -->
     <section class="screen on" id="load">
       <div class="block ink grain done"><span class="mono" id="loadmsg">Pulling your tasks</span><h1 id="loadhead">One second.</h1></div>
+    </section>
+
+    <!-- Home (the permanent app) -->
+    <section class="screen" id="home">
+      <div class="block ink grain hero">
+        <span class="mono" id="hcount"></span>
+        <div style="display:grid;gap:14px"><h1>What needs sorting?</h1><p class="lede">Rank everything on your plate, or just one client. Or redo the map of where your head is.</p></div>
+      </div>
+      <div class="scopes" id="scopes"></div>
+      <button class="maprow" id="gomap"><span>Priority map</span><span class="mono" id="mapage"></span></button>
+      <p class="mono err" id="homeerr"></p>
+    </section>
+
+    <!-- Priority map -->
+    <section class="screen" id="map">
+      <div class="mbar"><span class="mono" id="mstep">01 / Empty your head</span><span class="mono" id="mleft"></span></div>
+      <h1 class="mq" id="mq"></h1>
+      <div class="pile" id="pile"></div>
+      <form class="add" id="addb"><input id="addin" placeholder="Something else on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
+      <div class="mono lbl">The map <span>Top = most on your mind</span></div>
+      <div class="col" id="col" data-empty="Tap whatever is most on your mind"></div>
+      <div class="mono lbl">Not on my mind right now</div>
+      <div class="tray" id="tray" data-empty="Drag here to park something"></div>
+      <div class="mact">
+        <button class="tool" id="mpark">Park the rest</button>
+        <button class="cta" id="mnext"><span>Next: the tasks</span><span class="mono" id="mnextn"></span></button>
+        <button class="tool" id="mseal2">Seal it and reorganize my week</button>
+      </div>
+      <p class="mono err" id="maperr"></p>
     </section>
 
     <!-- Intro -->
@@ -179,8 +270,9 @@
     <section class="screen" id="sent">
       <div class="block pink done">
         <svg viewBox="0 0 60 100" fill="none" stroke="#E74B25" stroke-width="1.6" aria-hidden="true"><rect x="1" y="1" width="58" height="98" rx="8"/><ellipse cx="30" cy="22" rx="26" ry="17"/><ellipse cx="30" cy="50" rx="26" ry="17"/><ellipse cx="30" cy="78" rx="26" ry="17"/><path d="M30 17l5 5-5 5-5-5zM30 45l5 5-5 5-5-5zM30 73l5 5-5 5-5-5z"/></svg>
-        <div style="display:grid;gap:14px"><h1>Sent to Sol.</h1><p class="lede" id="sentmsg">She's moving your calendar to match. Check Slack for what changed. You can close this.</p></div>
+        <div style="display:grid;gap:14px"><h1 id="senthead">Sent to Sol.</h1><p class="lede" id="sentmsg">She's moving your calendar to match. Check Slack for what changed. You can close this.</p></div>
       </div>
+      <button class="cta" id="gohome" style="display:none"><span>Back to home</span><span></span></button>
     </section>
   </main>
   <footer class="mono"><span>Third Eye Marketing</span><span>The Bureau</span></footer>
@@ -189,11 +281,20 @@
 <script>
 (() => {
   const API = "https://bphjjoesluzzzghpaqdb.supabase.co/functions/v1/solari/rank";
-  const qs = new URLSearchParams(location.search), token = qs.get("t"), demo = qs.has("demo");
+  const qs = new URLSearchParams(location.search), demo = qs.has("demo");
+  let token = qs.get("t");
   const $ = (id) => document.getElementById(id);
   const show = (id) => { document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id)); window.scrollTo(0, 0); };
   const pad = (n) => String(n).padStart(2, "0");
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+  // The permanent app: his private key rides in the link he saved to his Dock or home screen (and is remembered here).
+  const key = qs.get("k") || store.get("sr:key");
+  if (qs.get("k")) store.set("sr:key", qs.get("k"));
+  const SENT = "She's moving your calendar to match. Check Slack for what changed. You can close this.";
+  const sent = (head, msg) => { $("senthead").textContent = head || "Sent to Sol."; $("sentmsg").textContent = msg || SENT; $("gohome").style.display = key || demo ? "" : "none"; show("sent"); };
+  const ease = "cubic-bezier(.2,.85,.2,1)", calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const buzz = (n) => { try { navigator.vibrate && navigator.vibrate(n); } catch {} };
 
   let S = null, picks = [], order = null, pending = null, done = new Set(), mins = {}, dues = {};
   const byId = () => new Map(S.items.map((i) => [i.id, i]));
@@ -247,7 +348,7 @@
   function render() {
     const r = solve();
     $("undo").disabled = !picks.length;
-    if (!r.sorted.length) { $("sentmsg").textContent = "Everything in this one is marked done and off your calendar. Nothing left to rank."; document.querySelector("#sent h1").textContent = "All done."; return show("sent"); }
+    if (!r.sorted.length) return sent("All done.", "Everything in this one is marked done and off your calendar. Nothing left to rank.");
     if (!r.ask) { order = order && order.length === r.sorted.length && order.every((id) => !done.has(id)) ? order : r.sorted.slice(); return renderResult(); }
     order = null;
     const m = byId(), flip = picks.length % 2 === 1;
@@ -328,29 +429,32 @@
         const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks, order, minutes: mins, due: dues, done: true }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok && r.status !== 409) throw new Error(j.error || "It didn't send. Try again.");
-      } else $("sentmsg").textContent = "This was a demo, so nothing was sent or moved.";
-      show("sent");
+      }
+      sent("Sent to Sol.", demo ? "This was a demo, so nothing was sent or moved." : SENT);
     } catch (e) { $("senderr").textContent = e.message || "It didn't send. Try again."; }
     $("send").disabled = false;
   }
 
   function fail(head, msg) { $("loadhead").textContent = head; $("loadmsg").textContent = msg; $("loadmsg").classList.add("err"); show("load"); }
 
-  async function boot() {
-    if (demo) S = { scope: "Clay", status: "open", picks: [], items: [
-      ["Clay Massage Launch Email", "Clay", 55, "Thu, Nov 19, 2:10 PM", null], ["Casted Rings Build Holiday Funnel And Ads", "Casted Rings", 60, "Fri, Nov 20, 12:55 PM", "Mon, Nov 23, 5:00 PM"],
-      ["Clay Booking Windows", "Clay", 30, "Thu, Nov 19, 4:30 PM", null], ["Send Sam W-9", null, 10, "Fri, Nov 20, 3:00 PM", null],
-      ["Trail Utility Black Friday Creative", "Trail Utility", 150, "Mon, Nov 23, 9:30 AM", "Wed, Nov 25, 5:00 PM"], ["Clay Pilates Waitlist", "Clay", 45, "Mon, Nov 30, 11:30 AM", null]]
-      .map((x, i) => ({ id: i + 1, title: x[0], client: x[1], minutes: x[2], when: x[3], deadline: x[4] })) };
+  const DEMO_ITEMS = [
+    ["Clay Massage Launch Email", "Clay", 55, "Thu, Nov 19, 2:10 PM", null], ["Casted Rings Build Holiday Funnel And Ads", "Casted Rings", 60, "Fri, Nov 20, 12:55 PM", "Mon, Nov 23, 5:00 PM"],
+    ["Clay Booking Windows", "Clay", 30, "Thu, Nov 19, 4:30 PM", null], ["Send Sam W-9", null, 10, "Fri, Nov 20, 3:00 PM", null],
+    ["Trail Utility Black Friday Creative", "Trail Utility", 150, "Mon, Nov 23, 9:30 AM", "Wed, Nov 25, 5:00 PM"], ["Clay Pilates Waitlist", "Clay", 45, "Mon, Nov 30, 11:30 AM", null]]
+    .map((x, i) => ({ id: i + 1, title: x[0], client: x[1], minutes: x[2], when: x[3], deadline: x[4] }));
+
+  // ---------- A ranking session ----------
+  async function loadSession() {
+    picks = []; order = null; pending = null; done = new Set(); mins = {}; dues = {};
+    if (demo) S = { scope: "Clay", status: "open", picks: [], items: DEMO_ITEMS };
     else {
-      if (!token) return fail("No link.", "Ask Sol for a stack rank and open the link she sends");
       let r; try { r = await fetch(API + "?t=" + token); } catch { return fail("Can't reach Sol.", "Check your connection and reload"); }
       S = await r.json().catch(() => null);
       if (!r.ok || !S || !S.items) return fail("This link is done.", (S && S.error) || "Ask Sol for a fresh one");
     }
     const all = S.scope === "all";
     $("scope").textContent = all ? "All work" : S.scope;
-    if (S.status !== "open") { order = S.order; $("sentmsg").textContent = "This one was already sent. Ask Sol for a fresh stack rank if things changed."; return show("sent"); }
+    if (S.status !== "open") { order = S.order; return sent("Already sent.", "This one was already sent. Start a fresh stack rank if things changed."); }
     const saved = store.get("sr:" + token) || {}, local = saved.picks || [];
     picks = (S.picks || []).length >= local.length ? (S.picks || []) : local;
     mins = saved.mins || {}; dues = saved.dues || {}; done = new Set(S.done || []);
@@ -358,9 +462,216 @@
     $("count").textContent = pad(n) + " tasks";
     $("headline").textContent = all ? "Everything on your plate. What goes first?" : "Every " + S.scope + " task. What goes first?";
     $("lede").textContent = "Two tasks at a time. Tap the one that should come first. Sol starts from the RUBRIC's order, so the more you agree with it, the fewer picks it takes.";
-    $("est").textContent = n - 1 + " to " + worst(n) + " picks";
-    if (picks.length) { $("start").firstElementChild.textContent = "Pick up where you left off"; $("est").textContent = picks.length + " picks in"; }
+    $("start").firstElementChild.textContent = picks.length ? "Pick up where you left off" : "Start";
+    $("est").textContent = picks.length ? picks.length + " picks in" : n - 1 + " to " + worst(n) + " picks";
     show("intro");
+  }
+
+  // ---------- Home ----------
+  async function home() {
+    $("scope").innerHTML = "&nbsp;"; $("homeerr").textContent = "";
+    let H;
+    if (demo) H = { total: 29, scopes: [{ name: "Clay", count: 13 }, { name: "3iM", count: 6 }, { name: "Casted Rings", count: 4 }, { name: "Trail Utility", count: 3 }, { name: "Adaygo", count: 2 }, { name: "Varaluz", count: 1 }], map: { at: new Date(Date.now() - 9 * 864e5).toISOString(), top: ["Casted Rings", "Clay", "Bureau"] } };
+    else {
+      let r; try { r = await fetch(API + "?k=" + encodeURIComponent(key)); } catch { return fail("Can't reach Sol.", "Check your connection and reload"); }
+      H = await r.json().catch(() => null);
+      if (!r.ok || !H) return fail("This link is done.", (H && H.error) || "Ask Sol for your app link again");
+    }
+    $("hcount").textContent = pad(H.total) + " open tasks";
+    const box = $("scopes"); box.innerHTML = "";
+    for (const sc of [{ name: "all", label: "Everything", count: H.total }, ...H.scopes.map((x) => ({ ...x, label: x.name }))]) {
+      const b = document.createElement("button"); b.className = "scope"; b.disabled = sc.count < 3;
+      const a = document.createElement("span"); a.textContent = sc.label;
+      const c = document.createElement("span"); c.className = "mono"; c.textContent = sc.count < 3 ? sc.count + " (too few to rank)" : pad(sc.count) + " tasks";
+      b.append(a, c); b.onclick = () => startScope(sc.name, b); box.appendChild(b);
+    }
+    const days = H.map ? Math.floor((Date.now() - Date.parse(H.map.at)) / 864e5) : null;
+    $("mapage").textContent = days === null ? "Never sealed" : days === 0 ? "Sealed today" : days === 1 ? "Sealed yesterday" : "Sealed " + days + " days ago";
+    show("home");
+  }
+  async function startScope(name, btn) {
+    if (demo) { token = "demo"; return loadSession(); }
+    btn.classList.add("busy"); $("homeerr").textContent = "";
+    try {
+      const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start: name }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.token) throw new Error(j.error || "Couldn't start that one");
+      token = j.token; await loadSession();
+    } catch (e) { $("homeerr").textContent = e.message; }
+    btn.classList.remove("busy");
+  }
+
+  // ---------- Priority map ----------
+  // Everything starts in a messy pile. He taps whatever is most on his mind and it flies into the map and straightens;
+  // then the next thing, until his head is clear. Then the tasks appear under each bucket to order or move.
+  let M = null, drag = null, justDragged = false;
+  const pile = $("pile"), col = $("col"), tray = $("tray");
+  function node(b, hint) {
+    const n = document.createElement("div"); n.className = "node"; n.dataset.name = b.name; n.dataset.kind = b.kind;
+    n.style.setProperty("--rot", (Math.random() * 13 - 6.5).toFixed(1) + "deg"); n.style.setProperty("--ty", (Math.random() * 12 - 4).toFixed(0) + "px"); n.style.setProperty("--z", String(1 + Math.floor(Math.random() * 5)));
+    const t = document.createElement("div"); t.className = "tile";
+    const rk = document.createElement("span"); rk.className = "rk mono";
+    const nm = document.createElement("b"); nm.textContent = b.name;
+    const ct = document.createElement("span"); ct.className = "ct mono"; ct.textContent = b.count ? b.count + (b.count === 1 ? " task" : " tasks") : hint || "";
+    const g = document.createElement("span"); g.className = "grip"; g.textContent = "⋮⋮"; g.setAttribute("aria-hidden", "true");
+    t.append(rk, nm, ct, g);
+    const tl = document.createElement("div"); tl.className = "tasks";
+    n.append(t, tl);
+    t.addEventListener("click", () => { if (justDragged) return; if (n.parentNode === pile || n.parentNode === tray) place(n); });
+    t.addEventListener("pointerdown", (e) => arm(e, n, "node"));
+    return n;
+  }
+  function chip(t) {
+    const c = document.createElement("div"); c.className = "chip"; c.dataset.id = t.id;
+    const g = document.createElement("span"); g.className = "grip"; g.textContent = "⋮⋮"; g.setAttribute("aria-hidden", "true");
+    const a = document.createElement("span"); a.className = "ctitle"; a.textContent = t.title;
+    const sm = document.createElement("small"); sm.textContent = hm(t.minutes) + (t.due ? " · due " + t.due.split(",").slice(0, 2).join(",") : "");
+    c.append(a, sm, g);
+    c.addEventListener("pointerdown", (e) => arm(e, c, "chip"));
+    return c;
+  }
+  // FLIP: remember where everything is, change the DOM, then animate each thing from where it was.
+  function flip(change, skip) {
+    const nodes = [...document.querySelectorAll("#map .node")], chips = [...document.querySelectorAll("#map .chip")];
+    const before = new Map([...nodes, ...chips].map((el) => [el, el.getBoundingClientRect()]));
+    change();
+    if (calm) return;
+    const moved = new Map();
+    for (const el of nodes) { const a = before.get(el), b = el.getBoundingClientRect(); const dx = a.left - b.left, dy = a.top - b.top; moved.set(el, [dx, dy]);
+      if (el !== skip && (dx || dy) && a.width) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 300, easing: ease }); }
+    for (const el of chips) { const a = before.get(el), b = el.getBoundingClientRect(); if (!a.width || !b.width || el === skip) continue;
+      const p = moved.get(el.closest(".node")) || [0, 0]; const dx = a.left - b.left - p[0], dy = a.top - b.top - p[1];
+      if (dx || dy) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 260, easing: ease }); }
+  }
+  function renumber() {
+    [...col.children].forEach((n, i) => { n.className = "node" + (i < 3 ? " r" + (i + 1) : ""); n.querySelector(".rk").textContent = pad(i + 1); });
+    [...tray.children, ...pile.children].forEach((n) => { n.className = "node"; });
+    const left = pile.children.length, p2 = $("map").classList.contains("p2");
+    $("mleft").textContent = p2 ? pad(col.children.length) + " on the map" : left ? pad(left) + " still in your head" : "Head's clear";
+    $("mq").textContent = p2 ? "Now the work under each one. Drag to order it, or move it to another bucket." : !col.children.length ? "What's most on your mind? Tap it." : left ? "And after that?" : "That's everything. Drag to adjust, then go on.";
+    $("mnext").disabled = !col.children.length; $("mpark").style.visibility = left && !p2 ? "visible" : "hidden";
+    $("mnextn").textContent = p2 || !left ? "" : "Parks the other " + left;
+  }
+  // Tap: out of the pile (or back from parked) and onto the bottom of the map, straightening as it lands.
+  function place(n) {
+    const a = n.getBoundingClientRect(), rot = n.parentNode === pile ? getComputedStyle(n).getPropertyValue("--rot") || "0deg" : "0deg";
+    flip(() => col.appendChild(n), n); renumber(); buzz(8);
+    const b = n.getBoundingClientRect();
+    if (!calm) n.animate([{ transform: `translate(${a.left - b.left}px,${a.top - b.top}px) rotate(${rot}) scale(${Math.max(.5, a.width / b.width)},1)`, transformOrigin: "0 0" },
+      { transform: "translate(0,-7px) rotate(0deg) scale(1.015,1.015)", transformOrigin: "0 0", offset: .72 }, { transform: "none", transformOrigin: "0 0" }], { duration: 560, easing: ease });
+    if (col.children.length > 4) n.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+  }
+  // Drag: mouse anywhere on a tile, touch on its grip. A ghost follows the pointer; the real thing waits in its slot.
+  function arm(e, el, type) {
+    if (drag || (e.pointerType === "mouse" ? e.button !== 0 : !e.target.closest(".grip"))) return;
+    if (type === "node" && el.parentNode === pile && e.pointerType !== "mouse") return;
+    if (e.target.closest(".x")) return;
+    e.stopPropagation();
+    const x0 = e.clientX, y0 = e.clientY;
+    const mv = (ev) => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 6) { off(); begin(ev, el, type); } };
+    const off = () => { removeEventListener("pointermove", mv); removeEventListener("pointerup", off); removeEventListener("pointercancel", off); };
+    addEventListener("pointermove", mv); addEventListener("pointerup", off); addEventListener("pointercancel", off);
+    if (e.pointerType !== "mouse") e.preventDefault();
+  }
+  function begin(e, el, type) {
+    const r = el.getBoundingClientRect(), g = el.cloneNode(true);
+    g.classList.add("ghost"); g.style.cssText += `;position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;margin:0;z-index:60;pointer-events:none;transform:none`;
+    document.body.appendChild(g); el.classList.add("hold");
+    drag = { el, type, g, ox: e.clientX - r.left, oy: e.clientY - r.top, x: e.clientX, y: e.clientY };
+    if (!calm) g.animate([{ transform: "scale(1) rotate(0deg)" }, { transform: "scale(1.03) rotate(-1.4deg)" }], { duration: 160, fill: "forwards", easing: ease });
+    buzz(6);
+    addEventListener("pointermove", onMove, { passive: false }); addEventListener("pointerup", drop); addEventListener("pointercancel", drop);
+    requestAnimationFrame(edge);
+  }
+  function onMove(e) { e.preventDefault(); drag.x = e.clientX; drag.y = e.clientY; drag.g.style.left = e.clientX - drag.ox + "px"; drag.g.style.top = e.clientY - drag.oy + "px"; settle(); }
+  function edge() { if (!drag) return; const m = 84; if (drag.y < m) scrollBy(0, -Math.ceil((m - drag.y) / 5)); else if (drag.y > innerHeight - m) scrollBy(0, Math.ceil((drag.y - (innerHeight - m)) / 5)); settle(); requestAnimationFrame(edge); }
+  function settle() {
+    const zones = drag.type === "node" ? [col, tray] : [...col.querySelectorAll(".tasks")];
+    let zone = null, best = 1e9;
+    for (const z of zones) { if (drag.type === "chip" && z.closest(".node") === null) continue; const r = z.getBoundingClientRect(); const d = drag.y < r.top ? r.top - drag.y : drag.y > r.bottom ? drag.y - r.bottom : 0; if (d < best) { best = d; zone = z; } }
+    if (!zone) return;
+    const sel = drag.type === "node" ? ".node" : ".chip";
+    let before = null;
+    for (const s of zone.children) { if (s === drag.el || !s.matches(sel)) continue; const r = s.getBoundingClientRect(); if (drag.y < r.top + r.height / 2) { before = s; break; } }
+    if (drag.el.parentNode === zone && (before ? drag.el.nextElementSibling === before : drag.el === zone.lastElementChild)) return;
+    flip(() => zone.insertBefore(drag.el, before), drag.el); renumber(); buzz(4);
+  }
+  function drop() {
+    removeEventListener("pointermove", onMove); removeEventListener("pointerup", drop); removeEventListener("pointercancel", drop);
+    const d = drag; drag = null; if (!d) return;
+    justDragged = true; setTimeout(() => { justDragged = false; }, 60);
+    const to = d.el.getBoundingClientRect(), from = d.g.getBoundingClientRect();
+    const done = () => { d.g.remove(); d.el.classList.remove("hold"); };
+    if (calm) return done();
+    d.g.animate([{ transform: "scale(1.03) rotate(-1.4deg)" }, { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(1) rotate(0deg)` }], { duration: 220, easing: ease, fill: "forwards" }).onfinish = done;
+    renumber();
+  }
+
+  async function openMap() {
+    $("scope").textContent = "Priority map"; $("maperr").textContent = "";
+    if (demo) M = { at: null, order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
+      tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i })) };
+    else {
+      show("load");
+      let r; try { r = await fetch(API + "?map=1&k=" + encodeURIComponent(key)); } catch { return fail("Can't reach Sol.", "Check your connection and reload"); }
+      M = await r.json().catch(() => null);
+      if (!r.ok || !M || !M.tasks) return fail("Couldn't open the map.", (M && M.error) || "Try again in a minute");
+    }
+    $("map").classList.remove("p2"); pile.innerHTML = ""; col.innerHTML = ""; tray.innerHTML = "";
+    $("mstep").textContent = "01 / Empty your head"; $("mnext").firstElementChild.textContent = "Next: the tasks";
+    const was = new Map((M.order || []).map((b, i) => [b.name, "was " + pad(i + 1)]));
+    const all = [...(M.order || []), ...(M.fresh || [])].sort(() => Math.random() - .5);
+    for (const b of all) pile.appendChild(node(b, was.get(b.name)));
+    for (const b of M.parked || []) tray.appendChild(node(b));
+    for (const n of document.querySelectorAll("#map .node")) {
+      const mine = M.tasks.filter((t) => t.bucket === n.dataset.name).sort((a, b) => a.pos - b.pos);
+      for (const t of mine) n.querySelector(".tasks").appendChild(chip(t));
+    }
+    renumber(); show("map");
+    if (!calm) [...pile.children].forEach((n, i) => n.animate([{ opacity: 0, transform: `translateY(-26px) rotate(${(Math.random() * 30 - 15).toFixed(0)}deg) scale(.9)` }, { opacity: 1, transform: getComputedStyle(n).transform === "none" ? "none" : getComputedStyle(n).transform }], { duration: 420, delay: 40 * i, easing: ease, fill: "backwards" }));
+  }
+  function parkRest() { const rest = [...pile.children]; if (!rest.length) return; flip(() => rest.forEach((n) => tray.appendChild(n))); renumber(); }
+  async function mapNext(reorganize) {
+    const m = $("map");
+    if (!m.classList.contains("p2")) {
+      parkRest(); m.classList.add("p2"); $("mstep").textContent = "02 / The work under each one"; $("mnext").firstElementChild.textContent = "Seal the map"; renumber(); window.scrollTo({ top: 0, behavior: calm ? "auto" : "smooth" });
+      if (!calm) [...col.querySelectorAll(".chip")].forEach((c, i) => c.animate([{ opacity: 0, transform: "translateX(-14px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: Math.min(900, 22 * i), easing: ease, fill: "backwards" }));
+      return;
+    }
+    // Seal: each bucket presses into place, top to bottom, then it goes to Sol.
+    $("mnext").disabled = true; $("mseal2").disabled = true; $("maperr").textContent = "";
+    const tiles = [...col.querySelectorAll(":scope > .node > .tile")];
+    if (!calm) { tiles.forEach((t, i) => t.animate([{ transform: "scale(1)" }, { transform: "scale(.965)", offset: .45 }, { transform: "scale(1)" }], { duration: 300, delay: 80 * i, easing: ease })); buzz(10); await new Promise((r) => setTimeout(r, 80 * tiles.length + 260)); }
+    const names = (z) => [...z.children].map((n) => n.dataset.name), tasks = {};
+    for (const n of [...col.children, ...tray.children]) tasks[n.dataset.name] = [...n.querySelectorAll(".chip")].map((c) => +c.dataset.id);
+    try {
+      if (!demo) {
+        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: names(col), parked: names(tray), tasks, reorganize: !!reorganize } }) });
+        if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "It didn't save. Try again.");
+      }
+      sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it.");
+    } catch (e) { $("maperr").textContent = e.message; }
+    $("mnext").disabled = false; $("mseal2").disabled = false;
+  }
+  $("addb").addEventListener("submit", (e) => {
+    e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); if (!v) return;
+    if ([...document.querySelectorAll("#map .node")].some((n) => n.dataset.name.toLowerCase() === v.toLowerCase())) { $("addin").value = ""; return; }
+    const n = node({ name: v, kind: "project", count: 0 }, "new");
+    const x = document.createElement("button"); x.className = "x"; x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove " + v);
+    x.onclick = (ev) => { ev.stopPropagation(); if (!n.querySelector(".chip")) { flip(() => n.remove()); renumber(); } };
+    n.querySelector(".tile").insertBefore(x, n.querySelector(".grip"));
+    pile.appendChild(n); $("addin").value = ""; renumber();
+    if (!calm) n.animate([{ transform: "scale(.4)", opacity: 0 }, { transform: getComputedStyle(n).transform, opacity: 1 }], { duration: 380, easing: ease });
+  });
+  $("mpark").onclick = parkRest; $("mnext").onclick = () => mapNext(false); $("mseal2").onclick = () => mapNext(true);
+  $("gomap").onclick = openMap; $("gohome").onclick = () => (key || demo ? home() : null);
+  document.querySelector(".word").onclick = () => { if (key || demo === true && qs.get("demo") === "home") home(); };
+
+  async function boot() {
+    if (demo) return qs.get("demo") === "home" ? home() : qs.get("demo") === "map" ? openMap() : loadSession();
+    if (token) return loadSession();
+    if (key) return location.hash === "#map" ? openMap() : home();
+    fail("No link.", "Ask Sol for a stack rank, or for your app link");
   }
 
   $("start").onclick = render;
