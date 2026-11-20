@@ -170,6 +170,9 @@
   .tasks { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 0 22px; padding: 2px 0 2px 14px; border-left: 1.5px solid var(--ink); }
   .grp.r1 > .tasks { margin-top: 16px; } .grp.r2 > .tasks { margin-top: 13px; }
   .board.notasks .tasks, .grp.new .tasks, .grp.parked .tasks { display: none; }
+  .board:not(.dragchip) .grp[data-shut] > .tasks { display: none; }
+  .tile .ct:not(:empty) { cursor: pointer; padding: 8px 0 8px 10px; margin: -8px 0; } .tile .ct:not(:empty)::after { content: "  \25BE"; } .grp[data-shut] .tile .ct:not(:empty)::after { content: "  \25B8"; }
+  .board.notasks .tile .ct::after, .grp.new .tile .ct::after, .grp.parked .tile .ct::after { content: none !important; }
   .tasks:empty { display: none; } .board.dragchip .grp:not(.new):not(.parked) .tasks:empty { display: flex; min-height: 30px; }
   .board.dragchip .tasks:empty::after { content: "Drop it here"; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; opacity: .5; padding: 7px 0; }
   .chip { position: relative; display: flex; align-items: baseline; gap: 8px; background: var(--white); padding: 8px 10px 8px 11px; border-radius: 12px 14px 12px 15px; cursor: grab; }
@@ -649,6 +652,9 @@
       if ($("map").classList.contains("on")) rerank();
     }, 700);
   }
+  // Collapse one card's tasks (Zach, Nov 19): tap its task count. A view, kept on this device.
+  let shut = new Set(store.get("sr:shut") || []);
+  function toggleShut(g) { const n = g.dataset.name; if (shut.has(n)) { shut.delete(n); delete g.dataset.shut; } else { shut.add(n); g.dataset.shut = "1"; } store.set("sr:shut", [...shut]); buzz(6); }
   function grp(b, x, y, fresh, hint) {
     const g = document.createElement("div"); g.className = "grp" + (fresh ? " new" : ""); g.dataset.name = b.name;
     g.style.left = x + "px"; g.style.top = y + "px"; g.style.setProperty("--rot", (Math.random() * 16 - 8).toFixed(1) + "deg");
@@ -660,6 +666,7 @@
     if (b.kind === "project") { const x2 = document.createElement("button"); x2.className = "x"; x2.type = "button"; x2.textContent = "×"; x2.setAttribute("aria-label", "Remove " + b.name);
       x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); autosave(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
+    if (shut.has(b.name)) g.dataset.shut = "1";
     g.append(t, tl); world.appendChild(g); paint(g);
     return g;
   }
@@ -682,7 +689,7 @@
     if (pts.size > 2) return;
     const ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), line = e.target.closest(".parkline");
     act = { kind: ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY };
-    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); }
+    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); act.onCt = !!e.target.closest(".ct"); }
     if (act.kind === "pan") board.classList.add("pan");
   });
   board.addEventListener("pointermove", (e) => {
@@ -700,7 +707,7 @@
   const up = (e) => {
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
     if (!act) return;
-    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) cardSheet(act.el); }
+    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) { if (act.onCt && act.el.querySelector(".chip") && !board.classList.contains("notasks")) toggleShut(act.el); else cardSheet(act.el); } }
     if (act.kind === "chip" && act.moved) chipDrop();
     if (act.moved && act.kind !== "pan") autosave();
     board.classList.remove("pan"); act = null;
