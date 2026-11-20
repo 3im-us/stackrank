@@ -508,8 +508,11 @@
       const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
       const pn = document.createElement("button"); pn.className = "did"; pn.textContent = "Pin to date"; pn.onclick = () => pinTo(id, pn);
       const cur = dues[id] !== undefined ? dues[id] : (it.due || "");
-      const due = document.createElement("label"); due.className = "due" + (cur ? " set" : ""); due.append("Due");
+      const due = document.createElement("label"); due.className = "due" + (cur ? " set" : ""); due.append(cur ? "Due" : "ASAP \u00b7 set a due date");
+      // No due date is the default: it's done as soon as it fits, in ranked order. The date box only appears once he
+      // asks for it (an empty date box shows today's date in Safari, which read as a date already being set).
       const di = document.createElement("input"); di.type = "date"; di.value = cur; di.setAttribute("aria-label", "Due date");
+      if (!cur) { di.style.cssText = "position:absolute;opacity:0;width:1px;height:1px;pointer-events:none"; due.style.cursor = "pointer"; due.style.position = "relative"; due.style.padding = "6px 8px"; due.onclick = (e) => { e.preventDefault(); try { di.showPicker(); } catch { di.style.cssText = ""; di.focus(); } }; }
       di.onchange = () => { if (di.value === (it.due || "")) delete dues[id]; else dues[id] = di.value; save(); renderResult(); };
       due.appendChild(di);
       if (cur) { const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Clear due date"); x.onclick = (e) => { e.preventDefault(); if (it.due) dues[id] = ""; else delete dues[id]; save(); renderResult(); }; due.appendChild(x); }
