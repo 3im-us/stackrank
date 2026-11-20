@@ -128,6 +128,9 @@
   .parkline { position: absolute; left: -6000px; width: 12000px; height: 0; border-top: 2px dashed rgba(29,29,27,.4); cursor: ns-resize; }
   .parkline::before { content: ""; position: absolute; left: 0; right: 0; top: -14px; height: 28px; }
   .parkline::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6000px; background: rgba(29,29,27,.05); pointer-events: none; }
+  .midline { position: absolute; top: -6000px; width: 0; border-left: 2px dashed rgba(29,29,27,.25); pointer-events: none; }
+  .xl, .xr { position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .6; background: rgba(236,234,235,.8); padding: 3px 5px; }
+  .xl { left: 6px; } .xr { right: 6px; } .xl::before { content: "\2190  "; } .xr::after { content: "  \2192"; }
   .parkline span { position: absolute; left: 5700px; top: 10px; white-space: nowrap; font-size: 13px; opacity: .6; }
   .grp { position: absolute; width: 300px; z-index: 2; }
   .grp.tidy { transition: left .55s cubic-bezier(.2,.85,.2,1), top .55s cubic-bezier(.2,.85,.2,1); }
@@ -149,6 +152,9 @@
   .legend { left: 10px; top: 36px; right: 150px; flex-wrap: wrap; gap: 5px; }
   .legend button { display: inline-flex; align-items: center; gap: 7px; background: var(--white); padding: 6px 10px 6px 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; }
   .legend button i, .pick button i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); flex: none; }
+  .legend .lg { display: inline-flex; gap: 1px; } .legend .lg .eye { padding: 6px 7px 6px 9px; } .legend .lg .eye + button { padding-left: 6px; }
+  .legend .lg.off { opacity: .5; } .legend .lg.off i { background: transparent; } .legend .lg.off .eye + button { text-decoration: line-through; }
+  .grp[data-hid] { display: none; }
   .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
   .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 30; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
   .hud.sheet { display: none; } .hud.sheet.on { display: flex; }
@@ -232,13 +238,14 @@
     <!-- Mind map -->
     <section class="screen" id="map">
       <div class="board" id="board">
-        <div class="world" id="world"><div class="parkline" id="parkline"><span class="mono">Not on my mind below this line (drag the line)</span></div></div>
-        <div class="axis mono"><span>Most on my mind</span><span>Less</span></div>
+        <div class="world" id="world"><div class="midline" id="midline"></div><div class="parkline" id="parkline"><span class="mono">Not on my mind below this line (drag the line)</span></div></div>
+        <div class="axis mono"><span>Should prioritize</span><span>Less</span></div>
+        <span class="xl mono">Don't enjoy</span><span class="xr mono">Enjoy</span>
         <div class="hud count mono" id="mleft"></div>
         <div class="hud legend" id="legend"></div>
         <div class="hud sheet" id="sheet"></div>
         <div class="hud zoom"><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
-        <div class="hint mono" id="mhint">Drag things up or down. Sol sorts new things into groups.</div>
+        <div class="hint mono" id="mhint">Up = priority. Right = enjoy.</div>
       </div>
       <div class="mact">
         <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
@@ -531,15 +538,28 @@
   // A board he pans and zooms, like a design canvas. Every bucket is a card he drags anywhere; how high it sits is how
   // much it's on his mind, and anything below the dashed line is parked. New things arrive tilted in a loose pile and
   // straighten the moment he picks them up. His tasks hang under each bucket and can be reordered or moved across.
-  let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760, G = [], groupOf = {};
+  let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760, midX = 150, G = [], groupOf = {};
   // Groups say what kind of thing a bucket is (3iM, another business, music, family, fun...). Each has a color from the
   // 3iM palette and can point at one of his calendars, which is how Sol knows where that group's things go.
   const COLORS = { orange: ["#E74B25", "#1D1D1B"], pink: ["#FFC8DA", "#1D1D1B"], ink: ["#1D1D1B", "#FFFFFF"], white: ["#FFFFFF", "#1D1D1B"], peach: ["#F5B5A3", "#1D1D1B"], stone: ["#B9B5B7", "#1D1D1B"] };
   const groupFor = (name) => G.find((x) => x.id === groupOf[name]) || null;
-  function paint(g) { const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B"); }
+  // Filter (Zach, Nov 19): hide a group to look at the rest. Only a view, kept on this device; hidden cards keep
+  // their place and still count when he seals.
+  let hidden = new Set(store.get("sr:hidden") || []);
+  const hidKey = (g) => (groupFor(g.dataset.name) || { id: "none" }).id;
+  function setHidden(ids) { hidden = new Set(ids); store.set("sr:hidden", [...hidden]); legend(); rerank(); fit(true); }
+  function paint(g) { if (hidden.has(hidKey(g))) g.dataset.hid = "1"; else delete g.dataset.hid; const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B"); }
   function legend() {
     const box = $("legend"); box.innerHTML = "";
-    for (const gr of G) { const b = document.createElement("button"), d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.append(d, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : "")); b.onclick = () => groupSheet(gr); box.appendChild(b); }
+    // Each group: tap the dot to hide or show it, tap the name to edit it.
+    const chipFor = (id, label, bg, edit) => { const w = document.createElement("span"), e = document.createElement("button"), d = document.createElement("i"), b = document.createElement("button"), off = hidden.has(id);
+      w.className = "lg" + (off ? " off" : ""); e.className = "eye"; e.setAttribute("aria-label", (off ? "Show " : "Hide ") + label); d.style.setProperty("--bg", bg); e.appendChild(d); b.textContent = label;
+      const flip = () => { const h = new Set(hidden); if (off) h.delete(id); else h.add(id); setHidden(h); buzz(6); };
+      e.onclick = flip; b.onclick = edit || flip; w.append(e, b); box.appendChild(w); };
+    for (const k of [...hidden]) if (k !== "none" && !G.some((x) => x.id === k)) hidden.delete(k);
+    for (const gr of G) chipFor(gr.id, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : ""), COLORS[gr.color][0], () => groupSheet(gr));
+    if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No group", "#E1DFE0");
+    if (hidden.size) { const all = document.createElement("button"); all.className = "add"; all.textContent = "Show all"; all.onclick = () => setHidden([]); box.appendChild(all); }
     const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Group"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
     groups().forEach(paint); autosave();
   }
@@ -572,18 +592,23 @@
     sheet.append(l1, l2, l3);
     const save = () => { gr.name = name.value.replace(/\s+/g, " ").trim(); if (!gr.name) return isNew ? closeSheet() : null; if (isNew) { G.push(gr); if (forCard) groupOf[forCard.dataset.name] = gr.id; } legend(); closeSheet(); };
     h.querySelector("button").onclick = save; name.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
-    if (!isNew) { name.oninput = () => { if (name.value.trim()) { gr.name = name.value.trim(); legend(); } };
+    if (!isNew) { const only = document.createElement("button"); only.className = "did"; only.style.alignSelf = "flex-start"; only.textContent = "Show only this group";
+      only.onclick = () => { closeSheet(); setHidden([...G.filter((x) => x !== gr).map((x) => x.id), "none"]); }; sheet.appendChild(only);
+      name.oninput = () => { if (name.value.trim()) { gr.name = name.value.trim(); legend(); } };
       const del = document.createElement("button"); del.className = "did"; del.style.alignSelf = "flex-start"; del.textContent = "Delete this group";
       del.onclick = () => { G = G.filter((x) => x !== gr); for (const k of Object.keys(groupOf)) if (groupOf[k] === gr.id) delete groupOf[k]; legend(); closeSheet(); }; sheet.appendChild(del); }
     sheet.classList.add("on"); if (isNew) setTimeout(() => name.focus(), 50);
   }
-  const board = $("board"), world = $("world"), parkline = $("parkline"), W = 300;
+  const board = $("board"), world = $("world"), parkline = $("parkline"), midline = $("midline"), W = 300;
+  // Left to right is how much he enjoys it (Zach, Nov 19): the dashed center line is neutral, a card's middle
+  // 640 to the right of it is "love it", 640 to the left "can't stand it".
+  const enjoyOf = (g) => +Math.max(-1, Math.min(1, (gx(g) + W / 2 - midX) / 640)).toFixed(2);
   const groups = () => [...world.querySelectorAll(".grp")];
   const gx = (g) => parseFloat(g.style.left) || 0, gy = (g) => parseFloat(g.style.top) || 0;
   function view() { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; const d = 30 * V.k; board.style.backgroundSize = d + "px " + d + "px"; board.style.backgroundPosition = V.x + "px " + V.y + "px"; }
   function zoomAt(cx, cy, k) { k = Math.max(.2, Math.min(2.2, k)); V.x = cx - (cx - V.x) * (k / V.k); V.y = cy - (cy - V.y) * (k / V.k); V.k = k; view(); }
   function fit(animate) {
-    const gs = groups(); if (!gs.length) return;
+    let gs = groups().filter((g) => !g.dataset.hid); if (!gs.length) gs = groups(); if (!gs.length) return;
     const r = board.getBoundingClientRect();
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (const g of gs) { x0 = Math.min(x0, gx(g)); y0 = Math.min(y0, gy(g)); x1 = Math.max(x1, gx(g) + W * 1.15); y1 = Math.max(y1, gy(g) + g.offsetHeight); }
@@ -599,7 +624,7 @@
   }
   // Rank is simply height on the board, re-read every time something moves.
   function rerank() {
-    parkline.style.top = parkY + "px";
+    parkline.style.top = parkY + "px"; midline.style.left = midX + "px"; midline.style.height = parkY + 6000 + "px";
     const gs = groups(), live = gs.filter((g) => !g.classList.contains("new") && gy(g) < parkY).sort((a, b) => gy(a) - gy(b) || gx(a) - gx(b));
     for (const g of gs) { const i = live.indexOf(g), keep = ["grp", g.classList.contains("new") ? "new" : "", g.classList.contains("lift") ? "lift" : "", g.classList.contains("tidy") ? "tidy" : ""];
       g.className = [...keep, i >= 0 && i < 3 ? "r" + (i + 1) : "", i < 0 && !g.classList.contains("new") ? "parked" : ""].filter(Boolean).join(" ");
@@ -619,7 +644,7 @@
     draftTimer = setTimeout(async () => {
       const gs = groups(), pos = {}, tasks = {};
       for (const g of gs) { if (!g.classList.contains("new")) pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
-      try { const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ draft: { buckets: gs.map((g) => g.dataset.name), pos, parkY, groups: G, groupOf, tasks } }) }); saveNote = r.ok ? "Saved" : "Not saved"; }
+      try { const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ draft: { buckets: gs.map((g) => g.dataset.name), pos, parkY, midX, groups: G, groupOf, tasks } }) }); saveNote = r.ok ? "Saved" : "Not saved"; }
       catch { saveNote = "Not saved"; }
       if ($("map").classList.contains("on")) rerank();
     }, 700);
@@ -726,15 +751,16 @@
   // the line, and the view re-fits. The satisfying part.
   function tidy() {
     const live = rerank(), gs = groups(); let y = 0;
-    for (const g of gs) g.classList.add("tidy");
-    for (const g of live) { g.style.left = "0px"; g.style.top = y + "px"; y += g.offsetHeight + (g.classList.contains("r1") ? 40 : 30); }
+    for (const g of gs) { g.classList.add("tidy"); delete g.dataset.hid; } // hidden cards are measured and placed too, then hidden again below
+    // Height order in rows; each card keeps its side of the center line, snapped to one of five lanes.
+    for (const g of live) { g.style.left = midX - W / 2 + Math.max(-2, Math.min(2, Math.round((gx(g) + W / 2 - midX) / 320))) * 320 + "px"; g.style.top = y + "px"; y += g.offsetHeight + (g.classList.contains("r1") ? 40 : 30); }
     parkY = Math.max(y + 50, 300);
     const rest = gs.filter((g) => !live.includes(g) && !g.classList.contains("new"));
     rest.forEach((g, i) => parkAt(g, i, 60));
     // The pile steps aside, still a pile: beside the column on a wide board, above it on a phone.
     const pile = gs.filter((g) => g.classList.contains("new")), slim = narrow(), up = Math.ceil(pile.length / 2) * 66 + 70;
-    pile.forEach((g, i) => { g.style.left = (slim ? 0 : W + 110) + (i % 2) * 165 + Math.random() * 30 + "px"; g.style.top = (slim ? -up : 10) + Math.floor(i / 2) * 66 + Math.random() * 20 + "px"; });
-    rerank(); buzz(10);
+    pile.forEach((g, i) => { g.style.left = (slim ? midX - W / 2 : Math.max(midX - W / 2, ...live.map(gx)) + W + 110) + (i % 2) * 165 + Math.random() * 30 + "px"; g.style.top = (slim ? -up : 10) + Math.floor(i / 2) * 66 + Math.random() * 20 + "px"; });
+    gs.forEach(paint); rerank(); buzz(10);
     setTimeout(() => { for (const g of gs) g.classList.remove("tidy"); rerank(); fit(true); autosave(); }, calm ? 0 : 580);
   }
 
@@ -755,7 +781,8 @@
     if (!G.length) { G = [{ id: "g3im", name: "3iM", color: "orange", calendar: (M.calendars || []).includes("Business") ? "Business" : null }];
       for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (b.kind === "client") groupOf[b.name] = "g3im"; for (const n of M.clients || []) groupOf[n] = "g3im"; }
     const pos = M.pos || {}, slim = board.getBoundingClientRect().width < 600;
-    const known = [...(M.order || []), ...(M.parked || [])].filter((b) => pos[b.name]);
+    // Anything with a saved place goes back there, sealed or not (an autosaved board that was never sealed has only "fresh" buckets).
+    const known = [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])].filter((b) => pos[b.name]);
     for (const b of known) grp(b, pos[b.name].x, pos[b.name].y, false);
     // Everything else lands in a loose pile: beside the map if there is one, in the middle of the board if not.
     const loose = [...(M.order || []), ...(M.parked || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0 }))].filter((b) => !pos[b.name]).sort(() => Math.random() - .5);
@@ -764,6 +791,9 @@
     loose.forEach((b, i) => grp(b, px + (i % cols - (cols - 1) / 2) * step - 70 + Math.random() * 50 - 25, py + Math.floor(i / cols) * 66 + Math.random() * 24 - 12, true));
     // First time, the park line sits a little under the pile, with room above it to build the map.
     parkY = M.parkY || py + Math.ceil(loose.length / cols) * 66 + 150;
+    // The center line: where he left it. On a map made before left-to-right meant anything, the middle card is neutral.
+    const mids = known.filter((b) => pos[b.name].y < parkY).map((b) => pos[b.name].x + W / 2).sort((a, b) => a - b);
+    midX = Number.isFinite(M.midX) ? M.midX : mids.length ? Math.round(mids[Math.floor(mids.length / 2)]) : 150;
     for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
     legend();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
@@ -779,12 +809,12 @@
     if (fresh.length) { fresh.forEach((g, i) => { g.classList.remove("new"); g.classList.add("tidy"); parkAt(g, i + gs0.filter((x) => x.classList.contains("parked")).length, 60); }); await new Promise((r) => setTimeout(r, calm ? 0 : 600)); fresh.forEach((g) => g.classList.remove("tidy")); }
     const live = rerank(), gs = groups(), parked = gs.filter((g) => !live.includes(g));
     if (!calm) { live.forEach((g, i) => g.querySelector(".tile").animate([{ filter: "brightness(1)" }, { filter: "brightness(.82)", offset: .4 }, { filter: "brightness(1)" }], { duration: 320, delay: 90 * i, easing: ease })); buzz(10); await new Promise((r) => setTimeout(r, 90 * live.length + 280)); }
-    const y0 = gy(live[0]), y1 = gy(live[live.length - 1]), levels = {}, pos = {}, tasks = {};
-    for (const g of live) levels[g.dataset.name] = y1 > y0 ? +((gy(g) - y0) / (y1 - y0)).toFixed(3) : 0;
+    const y0 = gy(live[0]), y1 = gy(live[live.length - 1]), levels = {}, enjoy = {}, pos = {}, tasks = {};
+    for (const g of live) { levels[g.dataset.name] = y1 > y0 ? +((gy(g) - y0) / (y1 - y0)).toFixed(3) : 0; enjoy[g.dataset.name] = enjoyOf(g); }
     for (const g of gs) { pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
     try {
       if (!demo) {
-        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, pos, parkY, tasks, groups: G, groupOf, reorganize: !!reorganize } }) });
+        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, enjoy, pos, parkY, midX, tasks, groups: G, groupOf, reorganize: !!reorganize } }) });
         if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "It didn't save. Try again.");
       }
       sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it. The board stays as you left it.");
@@ -795,6 +825,7 @@
   $("addb").addEventListener("submit", (e) => {
     e.preventDefault(); const v = $("addin").value.replace(/\s+/g, " ").trim(); $("addin").value = ""; $("addin").blur(); if (!v) return;
     if (groups().some((g) => g.dataset.name.toLowerCase() === v.toLowerCase())) return;
+    if (hidden.has("none")) setHidden([...hidden].filter((k) => k !== "none")); // a new thing has no group yet, so it has to be showing
     const r = board.getBoundingClientRect(), g = grp({ name: v, kind: "project", count: 0 }, (r.width / 2 - V.x) / V.k - W / 2 + Math.random() * 60 - 30, (r.height / 2 - V.y) / V.k - 30 + Math.random() * 40 - 20, true, "new");
     rerank(); autosave(); if (!calm) g.animate([{ transform: "scale(.3)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: ease });
   });
