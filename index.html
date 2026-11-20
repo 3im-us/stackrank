@@ -119,7 +119,7 @@
   .maprow:active { background: var(--ink); color: var(--white); }
   .word { cursor: pointer; }
 
-  /* Priority map: a board you pan and zoom. Higher on the board = more on his mind. */
+  /* Mind map: a board you pan and zoom. Higher on the board = more on his mind. */
   body.wide .wrap { max-width: none; }
   #map { gap: 10px; }
   .board { position: relative; flex: 1; min-height: 440px; height: calc(100dvh - 250px); overflow: hidden; background-color: #ECEAEB; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; overscroll-behavior: contain; }
@@ -225,11 +225,11 @@
         <div style="display:grid;gap:14px"><h1>What needs sorting?</h1><p class="lede">Rank everything on your plate, or just one client. Or redo the map of where your head is.</p></div>
       </div>
       <div class="scopes" id="scopes"></div>
-      <button class="maprow" id="gomap"><span>Priority map</span><span class="mono" id="mapage"></span></button>
+      <button class="maprow" id="gomap"><span>Mind map</span><span class="mono" id="mapage"></span></button>
       <p class="mono err" id="homeerr"></p>
     </section>
 
-    <!-- Priority map -->
+    <!-- Mind map -->
     <section class="screen" id="map">
       <div class="board" id="board">
         <div class="world" id="world"><div class="parkline" id="parkline"><span class="mono">Not on my mind below this line (drag the line)</span></div></div>
@@ -527,7 +527,7 @@
     btn.classList.remove("busy");
   }
 
-  // ---------- Priority map ----------
+  // ---------- Mind map ----------
   // A board he pans and zooms, like a design canvas. Every bucket is a card he drags anywhere; how high it sits is how
   // much it's on his mind, and anything below the dashed line is parked. New things arrive tilted in a loose pile and
   // straighten the moment he picks them up. His tasks hang under each bucket and can be reordered or moved across.
@@ -739,7 +739,7 @@
   }
 
   async function openMap() {
-    $("scope").textContent = "Priority map"; $("maperr").textContent = "";
+    $("scope").textContent = "Mind map"; $("maperr").textContent = "";
     if (demo) M = { at: null, calendars: ["Business", "Personal", "Roseburg", "Family", "Health"], order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
       tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i })) };
     else {
