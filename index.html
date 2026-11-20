@@ -620,7 +620,8 @@
     $("map").classList.remove("p2"); pile.innerHTML = ""; col.innerHTML = ""; tray.innerHTML = "";
     $("mstep").textContent = "01 / Empty your head"; $("mnext").firstElementChild.textContent = "Next: the tasks";
     const was = new Map((M.order || []).map((b, i) => [b.name, "was " + pad(i + 1)]));
-    const all = [...(M.order || []), ...(M.fresh || [])].sort(() => Math.random() - .5);
+    // Clients with nothing open still belong in his head: they go in the pile too.
+    const all = [...(M.order || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0 }))].sort(() => Math.random() - .5);
     for (const b of all) pile.appendChild(node(b, was.get(b.name)));
     for (const b of M.parked || []) tray.appendChild(node(b));
     for (const n of document.querySelectorAll("#map .node")) {
