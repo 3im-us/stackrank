@@ -155,8 +155,34 @@
   .legend .lg { display: inline-flex; gap: 1px; } .legend .lg .eye { padding: 6px 7px 6px 9px; } .legend .lg .eye + button { padding-left: 6px; }
   .legend .lg.off { opacity: .5; } .legend .lg.off i { background: transparent; } .legend .lg.off .eye + button { text-decoration: line-through; }
   .grp[data-hid] { display: none; }
+  /* Sam's clients: the same card, striped, so his are easy to tell from Zach's. */
+  .grp[data-sam] > .tile { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.2) 0 5px, transparent 5px 13px); }
+  .grp[data-sam] > .tile b::after { content: "SAM"; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; font-weight: 400; margin-left: 8px; padding: 2px 5px; border: 1px solid currentColor; vertical-align: middle; opacity: .8; }
+  /* Inside a Space: Projects, and tasks under them. */
+  .space { position: absolute; inset: 0; z-index: 40; background: #ECEAEB; overflow-y: auto; display: none; cursor: default; padding: 16px 16px 110px; touch-action: pan-y; -webkit-overflow-scrolling: touch; user-select: text; -webkit-user-select: text; }
+  .space.on { display: block; }
+  .space .in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .sp-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sp-head h2 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 44px; line-height: 1; letter-spacing: -.02em; flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .sp-btn { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: var(--white); padding: 10px 12px; display: inline-flex; gap: 8px; align-items: center; }
+  .sp-btn i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); }
+  .sp-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; line-height: 1.5; }
+  .sp-err { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--orange); line-height: 1.5; } .sp-err:empty { display: none; }
+  .sp-box { background: var(--white); }
+  .sp-ph { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; }
+  .sp-ph b { flex: 1; font-weight: 500; font-size: 20px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+  .sp-ph .tw { font-family: var(--mono); width: 14px; transition: transform .2s; } .sp-box.shut .sp-ph .tw { transform: rotate(-90deg); }
+  .sp-ph .n, .sp-ph .ed { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .6; } .sp-ph .ed { text-decoration: underline; text-underline-offset: 3px; padding: 6px 2px; }
+  .sp-box.shut .sp-pt { display: none; }
+  .sp-task { display: flex; width: 100%; text-align: left; gap: 12px; align-items: baseline; padding: 12px 14px; border-top: 1px solid rgba(29,29,27,.1); font-size: 16px; }
+  .sp-task span { flex: 1; overflow-wrap: anywhere; } .sp-task small { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; opacity: .6; white-space: nowrap; text-transform: uppercase; }
+  .sp-task.wait { opacity: .45; } .sp-task.bad small { color: var(--orange); opacity: 1; white-space: normal; text-align: right; }
+  .sp-add { display: flex; border-top: 1px solid rgba(29,29,27,.1); }
+  .sp-add input, .sp-newp input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 13px 14px; background: transparent; border: 0; outline: 0; color: var(--ink); border-radius: 0; }
+  .sp-newp { display: flex; border: 1.5px dashed rgba(29,29,27,.45); } .sp-newp button, .sp-add button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 0 14px; }
+  .sheet .acts { display: flex; flex-wrap: wrap; gap: 6px 18px; } .sheet .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
-  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 30; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 50; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
   .hud.sheet { display: none; } .hud.sheet.on { display: flex; }
   .sheet h3 { font-weight: 500; font-size: 22px; letter-spacing: -.02em; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
   .sheet h3 button { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
@@ -246,9 +272,10 @@
         <span class="xl mono">Don't enjoy</span><span class="xr mono">Enjoy</span>
         <div class="hud count mono" id="mleft"></div>
         <div class="hud legend" id="legend"></div>
+        <div class="space" id="space"></div>
         <div class="hud sheet" id="sheet"></div>
         <div class="hud zoom"><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
-        <div class="hint mono" id="mhint">Up = priority. Right = enjoy.</div>
+        <div class="hint mono" id="mhint">Up = priority. Right = enjoy. Tap to open.</div>
       </div>
       <div class="mact">
         <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><button class="tool" type="submit">Add</button></form>
@@ -561,28 +588,29 @@
       e.onclick = flip; b.onclick = edit || flip; w.append(e, b); box.appendChild(w); };
     for (const k of [...hidden]) if (k !== "none" && !G.some((x) => x.id === k)) hidden.delete(k);
     for (const gr of G) chipFor(gr.id, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : ""), COLORS[gr.color][0], () => groupSheet(gr));
-    if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No group", "#E1DFE0");
+    if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No area", "#E1DFE0");
     if (hidden.size) { const all = document.createElement("button"); all.className = "add"; all.textContent = "Show all"; all.onclick = () => setHidden([]); box.appendChild(all); }
-    const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Group"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
-    groups().forEach(paint); autosave();
+    const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Area"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
+    groups().forEach(paint); autosave(); if (SP) renderSpace();
   }
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
+  $("space").addEventListener("wheel", (e) => e.stopPropagation());
   function head(title) { const h = document.createElement("h3"), t = document.createElement("span"), x = document.createElement("button"); t.textContent = title; x.textContent = "Done"; x.onclick = closeSheet; h.append(t, x); return h; }
   // Tap a card: which group is it?
   function cardSheet(g) {
     sheet.innerHTML = ""; sheet.appendChild(head(g.dataset.name));
     const row = document.createElement("div"); row.className = "pick";
     for (const gr of [...G, null]) { const b = document.createElement("button"); if (gr) { const d = document.createElement("i"); d.style.setProperty("--bg", COLORS[gr.color][0]); b.appendChild(d); }
-      b.append(gr ? gr.name : "No group"); if ((gr ? gr.id : undefined) === groupOf[g.dataset.name]) b.classList.add("on");
-      b.onclick = () => { if (gr) groupOf[g.dataset.name] = gr.id; else delete groupOf[g.dataset.name]; paint(g); closeSheet(); buzz(6); autosave(); }; row.appendChild(b); }
-    const nw = document.createElement("button"); nw.textContent = "+ New group"; nw.style.borderStyle = "dashed";
+      b.append(gr ? gr.name : "No area"); if ((gr ? gr.id : undefined) === groupOf[g.dataset.name]) b.classList.add("on");
+      b.onclick = () => { if (gr) groupOf[g.dataset.name] = gr.id; else delete groupOf[g.dataset.name]; paint(g); closeSheet(); buzz(6); autosave(); if (SP) renderSpace(); }; row.appendChild(b); }
+    const nw = document.createElement("button"); nw.textContent = "+ New area"; nw.style.borderStyle = "dashed";
     nw.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true, g); };
     row.appendChild(nw); sheet.appendChild(row); sheet.classList.add("on");
   }
   // Tap a group in the legend (or make a new one): its name, color, and calendar.
   function groupSheet(gr, isNew, forCard) {
-    sheet.innerHTML = ""; const h = head(isNew ? "New group" : "Group"); sheet.appendChild(h);
+    sheet.innerHTML = ""; const h = head(isNew ? "New area" : "Area"); sheet.appendChild(h);
     const name = document.createElement("input"); name.placeholder = "Music, Family, Health, Startups..."; name.maxLength = 30; name.value = gr.name;
     const l1 = document.createElement("label"); l1.append("Name", name);
     const sw = document.createElement("div"); sw.className = "pick sw";
@@ -595,10 +623,10 @@
     sheet.append(l1, l2, l3);
     const save = () => { gr.name = name.value.replace(/\s+/g, " ").trim(); if (!gr.name) return isNew ? closeSheet() : null; if (isNew) { G.push(gr); if (forCard) groupOf[forCard.dataset.name] = gr.id; } legend(); closeSheet(); };
     h.querySelector("button").onclick = save; name.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
-    if (!isNew) { const only = document.createElement("button"); only.className = "did"; only.style.alignSelf = "flex-start"; only.textContent = "Show only this group";
+    if (!isNew) { const only = document.createElement("button"); only.className = "did"; only.style.alignSelf = "flex-start"; only.textContent = "Show only this area";
       only.onclick = () => { closeSheet(); setHidden([...G.filter((x) => x !== gr).map((x) => x.id), "none"]); }; sheet.appendChild(only);
       name.oninput = () => { if (name.value.trim()) { gr.name = name.value.trim(); legend(); } };
-      const del = document.createElement("button"); del.className = "did"; del.style.alignSelf = "flex-start"; del.textContent = "Delete this group";
+      const del = document.createElement("button"); del.className = "did"; del.style.alignSelf = "flex-start"; del.textContent = "Delete this area";
       del.onclick = () => { G = G.filter((x) => x !== gr); for (const k of Object.keys(groupOf)) if (groupOf[k] === gr.id) delete groupOf[k]; legend(); closeSheet(); }; sheet.appendChild(del); }
     sheet.classList.add("on"); if (isNew) setTimeout(() => name.focus(), 50);
   }
@@ -652,6 +680,146 @@
       if ($("map").classList.contains("on")) rerank();
     }, 700);
   }
+  // ---------- Inside a Space (Zach, Nov 19) ----------
+  // Every card is a Space. Tap one to go inside: Projects, with tasks under them (or loose in the Space). In a 3iM
+  // Space (a client, or 3iM) a task is a real one: adding it here puts it on his calendar and the client's Monday
+  // board, the same as asking Sol. Anywhere else, things live on the map only.
+  let SP = null, spErr = "", pend = [], spQ = Promise.resolve(), pshut = new Set(store.get("sr:pshut") || []);
+  const spaceEl = $("space");
+  const taskOf = (id) => ((M && M.tasks) || []).find((t) => t.id === id);
+  const tracked = () => SP && SP.dataset.kind === "client";
+  let demoId = 9000;
+  async function spCall(op) {
+    if (demo) {
+      await new Promise((r) => setTimeout(r, 350));
+      if (op.op === "add_project") return { project: { id: ++demoId, space: op.space, name: op.name, pos: demoId } };
+      if (op.op === "rename_project") return { project: { ...M.projects.find((p) => p.id === op.id), name: op.name } };
+      if (op.op === "add_task") return tracked() ? { task: { id: ++demoId, kind: "task", title: op.title, bucket: op.space, project_id: op.project_id || null, minutes: 30, when: "Next open slot", due: null, dueDay: "", pos: 999 } }
+        : { item: { id: ++demoId, kind: "item", space: op.space, project_id: op.project_id || null, title: op.title, pos: demoId, on_calendar: null } };
+      if (op.op === "edit_task") { const cur = op.kind === "item" ? M.items.find((i) => i.id === op.id) : taskOf(op.id), next = { ...cur };
+        if (op.title !== undefined) next.title = op.title; if (op.minutes !== undefined) next.minutes = op.minutes; if (op.project_id !== undefined) next.project_id = op.project_id;
+        if (op.due !== undefined) { next.dueDay = op.due; next.due = op.due || null; } return op.kind === "item" ? { item: next } : { task: next }; }
+      if (op.op === "calendar_item") return { note: "This is a demo, so nothing was added.", on_calendar: "Demo" };
+      return { ok: true };
+    }
+    let r; try { r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ space: op }) }); } catch { throw new Error("Can't reach Sol. Check your connection."); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || "That didn't save. Try again.");
+    return j;
+  }
+  const say = (m) => { spErr = m || ""; const e = spaceEl.querySelector(".sp-err"); if (e) e.textContent = spErr; };
+  function putTask(t) { // a tracked task: keep the data and its chip on the board in step
+    const i = M.tasks.findIndex((x) => x.id === t.id); if (i >= 0) M.tasks[i] = { ...M.tasks[i], ...t }; else M.tasks.push(t);
+    const g = groups().find((x) => x.dataset.name === t.bucket), old = world.querySelector(`.chip[data-id="${t.id}"]`), c = chip(taskOf(t.id));
+    if (old) old.replaceWith(c); else if (g) g.querySelector(".tasks").appendChild(c);
+    counts(); autosave();
+  }
+  function dropTask(id) { M.tasks = M.tasks.filter((x) => x.id !== id); const c = world.querySelector(`.chip[data-id="${id}"]`); if (c) c.remove(); counts(); autosave(); }
+  function openSpace(g) {
+    SP = g; spErr = ""; closeSheet(); renderSpace(); spaceEl.classList.add("on"); spaceEl.scrollTop = 0; buzz(6);
+    if (!calm) { const r = g.querySelector(".tile").getBoundingClientRect(), b = board.getBoundingClientRect(); spaceEl.style.transformOrigin = `${r.left + r.width / 2 - b.left}px ${r.top + r.height / 2 - b.top}px`;
+      spaceEl.animate([{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: ease }); }
+  }
+  function closeSpace() {
+    if (!SP) return; closeSheet(); SP = null;
+    if (calm) return spaceEl.classList.remove("on");
+    spaceEl.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.6)" }], { duration: 220, easing: "ease-in" }).onfinish = () => { if (!SP) spaceEl.classList.remove("on"); };
+  }
+  function renderSpace() {
+    if (!SP) return;
+    // Keep what he's typing through a redraw.
+    const a = document.activeElement, keep = a && spaceEl.contains(a) && a.dataset.key ? { key: a.dataset.key, v: a.value } : null;
+    const name = SP.dataset.name, gr = groupFor(name), el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text !== undefined) x.textContent = text; return x; };
+    const ids = [...SP.querySelectorAll(".chip")].map((c) => +c.dataset.id);
+    const projects = (M.projects || []).filter((p) => p.space === name).sort((x, y) => x.pos - y.pos || x.id - y.id), pid = new Set(projects.map((p) => p.id));
+    const all = [...ids.map(taskOf).filter(Boolean), ...(M.items || []).filter((i) => i.space === name)];
+    const under = (id) => all.filter((t) => (pid.has(t.project_id) ? t.project_id : null) === id);
+    const box = el("div", "in");
+    const hd = el("div", "sp-head"), back = el("button", "sp-btn", "\u2190 Map"), h2 = el("h2", "", name), ar = el("button", "sp-btn");
+    back.onclick = closeSpace; const dot = el("i"); dot.style.setProperty("--bg", gr ? COLORS[gr.color][0] : "#E1DFE0"); ar.append(dot, gr ? gr.name : "No area"); ar.onclick = () => cardSheet(SP);
+    hd.append(back, h2, ar); box.appendChild(hd);
+    box.appendChild(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."));
+    box.appendChild(el("p", "sp-err", spErr));
+    const row = (t) => { const b = el("button", "sp-task"), meta = t.kind === "item" ? (t.on_calendar ? "On " + t.on_calendar : "") : [hm(t.minutes), (t.when || "").split(", ").slice(0, 2).join(", "), t.due ? "due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : ""].filter(Boolean).join(" \u00b7 ");
+      b.append(el("span", "", t.title), el("small", "", meta)); b.onclick = () => taskSheet(t); return b; };
+    const adder = (projectId) => { const f = el("form", "sp-add"), inp = el("input"); inp.placeholder = projectId ? "Add a task to this project" : "Add a task"; inp.maxLength = 120; inp.autocomplete = "off"; inp.enterKeyHint = "done"; inp.dataset.key = "t" + (projectId || 0);
+      f.appendChild(inp); f.onsubmit = (e) => { e.preventDefault(); const v = inp.value.replace(/\s+/g, " ").trim(); if (!v) return; inp.value = ""; addTask(name, projectId, v); }; return f; };
+    const waiting = (projectId) => pend.filter((q) => q.space === name && (q.project_id || null) === projectId).map((q) => { const b = el("div", "sp-task " + (q.err ? "bad" : "wait")); b.append(el("span", "", q.title), el("small", "", q.err || (tracked() ? "Adding to your calendar" : "Adding")));
+      if (q.err) { b.style.cursor = "pointer"; b.onclick = () => { pend = pend.filter((x) => x !== q); renderSpace(); }; } return b; });
+    const loose = el("div", "sp-box"); for (const t of under(null)) loose.appendChild(row(t)); loose.append(...waiting(null), adder(null)); loose.firstChild.style.borderTop = "0"; box.appendChild(loose);
+    for (const p of projects) {
+      const bx = el("div", "sp-box" + (pshut.has(p.id) ? " shut" : "")), ph = el("div", "sp-ph"), ts = under(p.id), ed = el("button", "ed", "Edit"), pt = el("div", "sp-pt");
+      ph.append(el("span", "tw", "\u25BE"), el("b", "", p.name), el("span", "n", ts.length ? ts.length + (ts.length === 1 ? " task" : " tasks") : ""), ed);
+      ph.onclick = (e) => { if (e.target === ed) return projectSheet(p, projects); if (pshut.has(p.id)) pshut.delete(p.id); else pshut.add(p.id); store.set("sr:pshut", [...pshut]); bx.classList.toggle("shut"); buzz(4); };
+      for (const t of ts) pt.appendChild(row(t)); pt.append(...waiting(p.id), adder(p.id)); bx.append(ph, pt); box.appendChild(bx);
+    }
+    const np = el("form", "sp-newp"), ni = el("input"), nb = el("button", "", "Add project"); ni.placeholder = "New project"; ni.maxLength = 40; ni.autocomplete = "off"; ni.dataset.key = "newp"; nb.type = "submit"; np.append(ni, nb);
+    np.onsubmit = async (e) => { e.preventDefault(); const v = ni.value.replace(/\s+/g, " ").trim(); if (!v) return; ni.value = ""; say("");
+      try { const r = await spCall({ op: "add_project", space: name, name: v }); if (!M.projects.some((p) => p.id === r.project.id)) M.projects.push(r.project); renderSpace(); const f = spaceEl.querySelector(`[data-key="t${r.project.id}"]`); if (f) f.focus(); } catch (err) { say(err.message); } };
+    box.appendChild(np);
+    spaceEl.innerHTML = ""; spaceEl.appendChild(box);
+    if (keep) { const f = spaceEl.querySelector(`[data-key="${keep.key}"]`); if (f) { f.value = keep.v; f.focus(); } }
+  }
+  // Adding is queued, so he can keep typing a brain dump while each one lands on the calendar.
+  function addTask(space, projectId, title) {
+    const q = { space, project_id: projectId, title }; pend.push(q); say(""); renderSpace();
+    spQ = spQ.then(async () => {
+      try { const r = await spCall({ op: "add_task", space, project_id: projectId, title });
+        pend = pend.filter((x) => x !== q);
+        if (r.task) putTask(r.task); else if (r.item) { M.items.push(r.item); counts(); }
+        if (r.note) say(r.note.trim());
+      } catch (e) { q.err = e.message + " (tap to clear)"; }
+      renderSpace();
+    });
+  }
+  function field(label, input) { const l = document.createElement("label"); l.append(label, input); return l; }
+  function taskSheet(t) {
+    sheet.innerHTML = ""; const h = head(t.kind === "item" ? "Thing" : "Task"); sheet.appendChild(h);
+    const name = SP.dataset.name, projects = (M.projects || []).filter((p) => p.space === name).sort((x, y) => x.pos - y.pos);
+    const ti = document.createElement("input"); ti.value = t.title; ti.maxLength = 120; sheet.appendChild(field("Name", ti));
+    let mi = null, di = null;
+    if (t.kind !== "item") { const two = document.createElement("div"); two.className = "two"; mi = document.createElement("input"); mi.type = "number"; mi.min = 5; mi.max = 600; mi.step = 5; mi.inputMode = "numeric"; mi.value = t.minutes;
+      di = document.createElement("input"); di.type = "date"; di.value = t.dueDay || ""; two.append(field("Minutes", mi), field("Due", di)); sheet.appendChild(two); }
+    const ps = document.createElement("select"); for (const p of [null, ...projects]) { const o = document.createElement("option"); o.value = p ? p.id : ""; o.textContent = p ? p.name : "No project"; ps.appendChild(o); }
+    ps.value = projects.some((p) => p.id === t.project_id) ? t.project_id : ""; sheet.appendChild(field("Project", ps));
+    const acts = document.createElement("div"); acts.className = "acts";
+    const act = (label, fn, twice) => { const b = document.createElement("button"); b.className = "did"; b.textContent = label; let armed = !twice;
+      b.onclick = async () => { if (!armed) { armed = true; b.textContent = "Tap again to confirm"; return; } b.disabled = true; say(""); try { await fn(); } catch (e) { say(e.message); } closeSheet(); renderSpace(); }; acts.appendChild(b); };
+    const gone = () => { if (t.kind === "item") { M.items = M.items.filter((i) => i.id !== t.id); counts(); } else dropTask(t.id); };
+    act(t.kind === "item" ? "Done" : "Already did this", async () => { await spCall({ op: "done_task", id: t.id, kind: t.kind }); gone(); buzz(10); }, t.kind !== "item");
+    if (t.kind === "item" && !t.on_calendar) act("Put on my calendar", async () => { const r = await spCall({ op: "calendar_item", id: t.id }); t.on_calendar = r.on_calendar; say(r.note); });
+    act("Delete", async () => { await spCall({ op: "delete_task", id: t.id, kind: t.kind }); gone(); }, true);
+    sheet.appendChild(acts);
+    const save = async () => {
+      const op = { op: "edit_task", id: t.id, kind: t.kind }, v = ti.value.replace(/\s+/g, " ").trim(), pj = ps.value ? +ps.value : null;
+      if (v && v !== t.title) op.title = v;
+      if (mi && +mi.value >= 5 && +mi.value !== t.minutes) op.minutes = Math.round(+mi.value);
+      if (di && di.value !== (t.dueDay || "")) op.due = di.value;
+      if (pj !== (projects.some((p) => p.id === t.project_id) ? t.project_id : null)) op.project_id = pj;
+      closeSheet(); if (Object.keys(op).length === 3) return;
+      say("");
+      try { const r = await spCall(op); if (r.task) putTask(r.task); else if (r.item) M.items = M.items.map((i) => (i.id === t.id ? r.item : i)); } catch (e) { say(e.message); }
+      renderSpace();
+    };
+    h.querySelector("button").textContent = "Save"; h.querySelector("button").onclick = save; ti.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    sheet.classList.add("on");
+  }
+  function projectSheet(p, projects) {
+    sheet.innerHTML = ""; const h = head("Project"); sheet.appendChild(h);
+    const ni = document.createElement("input"); ni.value = p.name; ni.maxLength = 40; sheet.appendChild(field("Name", ni));
+    const acts = document.createElement("div"); acts.className = "acts";
+    const i = projects.indexOf(p), mv = (d, label) => { if (i + d < 0 || i + d >= projects.length) return; const b = document.createElement("button"); b.className = "did"; b.textContent = label;
+      b.onclick = async () => { const o = projects.slice(); o.splice(i, 1); o.splice(i + d, 0, p); o.forEach((x, k) => (x.pos = k)); closeSheet(); renderSpace(); try { await spCall({ op: "order_projects", ids: o.map((x) => x.id) }); } catch (e) { say(e.message); } }; acts.appendChild(b); };
+    mv(-1, "Move up"); mv(1, "Move down");
+    const del = document.createElement("button"); del.className = "did"; del.textContent = "Delete project (tasks stay)"; let armed = false;
+    del.onclick = async () => { if (!armed) { armed = true; del.textContent = "Tap again to confirm"; return; } closeSheet();
+      try { await spCall({ op: "delete_project", id: p.id }); M.projects = M.projects.filter((x) => x.id !== p.id); for (const t of [...M.tasks, ...M.items]) if (t.project_id === p.id) t.project_id = null; } catch (e) { say(e.message); } renderSpace(); };
+    acts.appendChild(del); sheet.appendChild(acts);
+    const save = async () => { const v = ni.value.replace(/\s+/g, " ").trim(); closeSheet(); if (!v || v === p.name) return; try { const r = await spCall({ op: "rename_project", id: p.id, name: v }); p.name = r.project.name; } catch (e) { say(e.message); } renderSpace(); };
+    h.querySelector("button").textContent = "Save"; h.querySelector("button").onclick = save; ni.addEventListener("keydown", (e) => { if (e.key === "Enter") save(); });
+    sheet.classList.add("on");
+  }
+
   // Collapse one card's tasks (Zach, Nov 19): tap its task count. A view, kept on this device.
   let shut = new Set(store.get("sr:shut") || []);
   function toggleShut(g) { const n = g.dataset.name; if (shut.has(n)) { shut.delete(n); delete g.dataset.shut; } else { shut.add(n); g.dataset.shut = "1"; } store.set("sr:shut", [...shut]); buzz(6); }
@@ -667,6 +835,7 @@
       x2.addEventListener("pointerdown", (e) => e.stopPropagation()); x2.onclick = () => { if (!g.querySelector(".chip")) { g.remove(); rerank(); autosave(); } }; t.appendChild(x2); }
     const tl = document.createElement("div"); tl.className = "tasks";
     if (shut.has(b.name)) g.dataset.shut = "1";
+    g.dataset.kind = b.kind || "project"; if (b.sam) g.dataset.sam = "1";
     g.append(t, tl); world.appendChild(g); paint(g);
     return g;
   }
@@ -680,7 +849,7 @@
   // One set of pointer handlers for the whole board: drag a card, drag a task, drag the park line, pan, or pinch.
   const pts = new Map(); let act = null, pinch = null;
   board.addEventListener("pointerdown", (e) => {
-    if (e.target.closest(".hud, .x") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (e.target.closest(".hud, .x, .space") || (e.pointerType === "mouse" && e.button !== 0)) return;
     if (sheet.classList.contains("on")) closeSheet();
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { board.setPointerCapture(e.pointerId); } catch {}
@@ -707,7 +876,7 @@
   const up = (e) => {
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
     if (!act) return;
-    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) { if (act.onCt && act.el.querySelector(".chip") && !board.classList.contains("notasks")) toggleShut(act.el); else cardSheet(act.el); } }
+    if (act.kind === "grp") { act.el.classList.remove("lift"); rerank(); if (!act.moved) { if (act.onCt && act.el.querySelector(".chip") && !board.classList.contains("notasks")) toggleShut(act.el); else openSpace(act.el); } }
     if (act.kind === "chip" && act.moved) chipDrop();
     if (act.moved && act.kind !== "pan") autosave();
     board.classList.remove("pan"); act = null;
@@ -750,7 +919,7 @@
     if (calm) return done();
     g.animate([{ transform: `scale(${V.k})` }, { transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(${V.k})` }], { duration: 200, easing: ease, fill: "forwards" }).onfinish = done;
   }
-  function counts() { for (const g of groups()) { const n = g.querySelectorAll(".chip").length, ct = g.querySelector(".ct"); if (n || /task/.test(ct.textContent)) ct.textContent = n ? n + (n === 1 ? " task" : " tasks") : ""; } }
+  function counts() { for (const g of groups()) { const n = g.querySelectorAll(".chip").length + ((M && M.items) || []).filter((i) => i.space === g.dataset.name).length, ct = g.querySelector(".ct"); if (n || /task/.test(ct.textContent)) ct.textContent = n ? n + (n === 1 ? " task" : " tasks") : ""; } }
 
   const narrow = () => board.getBoundingClientRect().width < 600;
   const parkAt = (g, i, gap) => { const per = narrow() ? 1 : 3; g.style.left = (i % per) * (W + 26) + "px"; g.style.top = parkY + gap + Math.floor(i / per) * 78 + "px"; };
@@ -774,25 +943,29 @@
   async function openMap() {
     $("scope").textContent = "Mind map"; $("maperr").textContent = "";
     if (demo) M = { at: null, calendars: ["Business", "Personal", "Roseburg", "Family", "Health"], order: [], parked: [{ name: "Fresh Scent NYC", kind: "client", count: 0 }], pos: { "Fresh Scent NYC": { x: -160, y: 860 } }, fresh: ["Clay", "Casted Rings", "Trail Utility", "3iM", "Adaygo", "Varaluz", "GRLSWIRL"].map((n, i) => ({ name: n, kind: "client", count: [3, 1, 1, 1, 0, 0, 0][i] })),
-      tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i })) };
+      tasks: DEMO_ITEMS.map((t, i) => ({ id: t.id, title: t.title, bucket: t.client || "3iM", minutes: t.minutes, due: t.deadline, pos: i, project_id: (t.client || "") === "Clay" && i % 2 ? 1 : null })),
+      projects: [{ id: 1, space: "Clay", name: "Black Friday", pos: 0 }, { id: 2, space: "Clay", name: "New Member Flow", pos: 1 }], items: [], sams: ["GRLSWIRL"] };
     else {
       show("load");
       let r; try { r = await fetch(API + "?map=1&k=" + encodeURIComponent(key)); } catch { return fail("Can't reach Sol.", "Check your connection and reload"); }
       M = await r.json().catch(() => null);
       if (!r.ok || !M || !M.tasks) return fail("Couldn't open the map.", (M && M.error) || "Try again in a minute");
     }
+    M.projects = M.projects || []; M.items = M.items || []; M.tasks.forEach((t) => { t.kind = "task"; });
+    SP = null; $("space").classList.remove("on");
     loading = true; saveNote = M.unsealed ? "Not sealed yet" : "";
     groups().forEach((g) => g.remove()); closeSheet();
     // Groups: as he left them. The first time, one group (3iM, on Business) holding every client and 3iM itself.
     G = (M.groups || []).filter((x) => COLORS[x.color]).map((x) => ({ ...x })); groupOf = { ...(M.groupOf || {}) };
     if (!G.length) { G = [{ id: "g3im", name: "3iM", color: "orange", calendar: (M.calendars || []).includes("Business") ? "Business" : null }];
       for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (b.kind === "client") groupOf[b.name] = "g3im"; for (const n of M.clients || []) groupOf[n] = "g3im"; }
+    const samSet = new Set(M.sams || []); for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (samSet.has(b.name)) b.sam = true;
     const pos = M.pos || {}, slim = board.getBoundingClientRect().width < 600;
     // Anything with a saved place goes back there, sealed or not (an autosaved board that was never sealed has only "fresh" buckets).
     const known = [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])].filter((b) => pos[b.name]);
     for (const b of known) grp(b, pos[b.name].x, pos[b.name].y, false);
     // Everything else lands in a loose pile: beside the map if there is one, in the middle of the board if not.
-    const loose = [...(M.order || []), ...(M.parked || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0 }))].filter((b) => !pos[b.name]).sort(() => Math.random() - .5);
+    const loose = [...(M.order || []), ...(M.parked || []), ...(M.fresh || []), ...(M.clients || []).map((n) => ({ name: n, kind: "client", count: 0, sam: samSet.has(n) }))].filter((b) => !pos[b.name]).sort(() => Math.random() - .5);
     const cols = slim ? 2 : Math.max(2, Math.min(4, Math.ceil(Math.sqrt(loose.length)))), step = slim ? 150 : 190;
     const px = known.length ? Math.max(...known.map((b) => pos[b.name].x)) + W + 120 + ((cols - 1) / 2) * step : 0, py = known.length ? 120 : 220;
     loose.forEach((b, i) => grp(b, px + (i % cols - (cols - 1) / 2) * step - 70 + Math.random() * 50 - 25, py + Math.floor(i / cols) * 66 + Math.random() * 24 - 12, true));
