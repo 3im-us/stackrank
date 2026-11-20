@@ -87,7 +87,10 @@
   .row .t small { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .6; margin-top: 4px; font-weight: 400; }
   .row .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
   .row select { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink); background: var(--fog); border: 1.5px solid var(--ink); border-radius: 0; padding: 6px 8px; -webkit-appearance: none; appearance: none; }
-  .row select.set { background: var(--pink); }
+  .row select.set, .row .due.set { background: var(--pink); }
+  .row .due { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; border: 1.5px solid var(--ink); background: var(--fog); padding: 0 0 0 8px; }
+  .row .due input { font: inherit; color: var(--ink); background: transparent; border: 0; padding: 6px 6px 6px 0; min-width: 118px; text-transform: uppercase; }
+  .row .due button { padding: 6px 8px; border-left: 1.5px solid var(--ink); }
   .row .did { align-self: auto; padding: 6px 0; }
   .total { font-weight: 500; font-size: 26px; letter-spacing: -.02em; margin-top: 6px; }
   .row .mv { display: flex; gap: 2px; } .row .mv button { width: 38px; height: 38px; font-size: 15px; display: grid; place-items: center; }
@@ -165,7 +168,7 @@
     <section class="screen" id="result">
       <div class="list" id="list"></div>
       <div class="act">
-        <div class="block pink"><span class="mono">Your order</span><div class="total" id="total"></div><p class="lede" style="margin-top:10px">Set how long each one will really take, nudge the order with the arrows, then send it. Sol resizes and repacks these on your calendar, and learns your lengths for next time.</p></div>
+        <div class="block pink"><span class="mono">Your order</span><div class="total" id="total"></div><p class="lede" style="margin-top:10px">Set how long each one will really take and when it's due, nudge the order with the arrows, then send it. Sol resizes and repacks these on your calendar, never past a due date, and learns your lengths for next time.</p></div>
         <button class="cta" id="send"><span>Send to Sol</span><span id="sendn"></span></button>
         <button class="tool" id="back">&larr; Back to picking</button>
         <p class="mono err" id="senderr"></p>
@@ -192,7 +195,7 @@
   const pad = (n) => String(n).padStart(2, "0");
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
-  let S = null, picks = [], order = null, pending = null, done = new Set(), mins = {};
+  let S = null, picks = [], order = null, pending = null, done = new Set(), mins = {}, dues = {};
   const byId = () => new Map(S.items.map((i) => [i.id, i]));
   const live = () => S.items.filter((i) => !done.has(i.id));
   const minsOf = (it) => mins[it.id] || it.minutes;
@@ -228,7 +231,7 @@
 
   let saveTimer = null;
   function save() {
-    store.set("sr:" + token, { picks, mins });
+    store.set("sr:" + token, { picks, mins, dues });
     if (demo) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks }), keepalive: true }).catch(() => {}), 600);
@@ -299,7 +302,13 @@
       sel.value = minsOf(it); sel.classList.toggle("set", minsOf(it) !== it.minutes);
       sel.onchange = () => { const v = +sel.value; if (v === it.minutes) delete mins[id]; else mins[id] = v; save(); renderResult(); };
       const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
-      ctl.append(sel, dn); t.appendChild(ctl);
+      const cur = dues[id] !== undefined ? dues[id] : (it.due || "");
+      const due = document.createElement("label"); due.className = "due" + (cur ? " set" : ""); due.append("Due");
+      const di = document.createElement("input"); di.type = "date"; di.value = cur; di.setAttribute("aria-label", "Due date");
+      di.onchange = () => { if (di.value === (it.due || "")) delete dues[id]; else dues[id] = di.value; save(); renderResult(); };
+      due.appendChild(di);
+      if (cur) { const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Clear due date"); x.onclick = (e) => { e.preventDefault(); if (it.due) dues[id] = ""; else delete dues[id]; save(); renderResult(); }; due.appendChild(x); }
+      ctl.append(sel, due, dn); t.appendChild(ctl);
       const mv = document.createElement("div"); mv.className = "mv";
       for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down"); b.disabled = i + d < 0 || i + d >= order.length;
         b.onclick = () => { [order[i], order[i + d]] = [order[i + d], order[i]]; renderResult(); }; mv.appendChild(b); }
@@ -316,7 +325,7 @@
     try {
       if (!demo) {
         clearTimeout(saveTimer);
-        const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks, order, minutes: mins, done: true }) });
+        const r = await fetch(API + "?t=" + token, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ picks, order, minutes: mins, due: dues, done: true }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok && r.status !== 409) throw new Error(j.error || "It didn't send. Try again.");
       } else $("sentmsg").textContent = "This was a demo, so nothing was sent or moved.";
@@ -344,7 +353,7 @@
     if (S.status !== "open") { order = S.order; $("sentmsg").textContent = "This one was already sent. Ask Sol for a fresh stack rank if things changed."; return show("sent"); }
     const saved = store.get("sr:" + token) || {}, local = saved.picks || [];
     picks = (S.picks || []).length >= local.length ? (S.picks || []) : local;
-    mins = saved.mins || {}; done = new Set(S.done || []);
+    mins = saved.mins || {}; dues = saved.dues || {}; done = new Set(S.done || []);
     const n = live().length;
     $("count").textContent = pad(n) + " tasks";
     $("headline").textContent = all ? "Everything on your plate. What goes first?" : "Every " + S.scope + " task. What goes first?";
