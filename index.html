@@ -168,6 +168,7 @@
   .sp-bar h2 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 38px; line-height: 1; letter-spacing: -.02em; flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
   .sp-btn { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: var(--white); padding: 10px 12px; display: inline-flex; gap: 8px; align-items: center; }
   .sp-btn i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); }
+  .sp-zoom { display: inline-flex; gap: 2px; } .sp-zoom .sp-btn { min-width: 40px; justify-content: center; font-size: 13px; }
   .sp-info { padding: 0 12px 8px; display: grid; gap: 4px; }
   .sp-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; opacity: .6; line-height: 1.5; }
   .sp-err { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--orange); line-height: 1.5; } .sp-err:empty { display: none; }
@@ -851,7 +852,9 @@
           const q = { ...r.project, x: Math.round((b.width / 2 - SV.x) / SV.k - W / 2 + Math.random() * 60 - 30), y: Math.round((b.height / 2 - SV.y) / SV.k - 40 + Math.random() * 40 - 20) }; M.projects.push(q); if (!demo) spCall({ op: "place_project", id: q.id, x: q.x, y: q.y }).catch(() => {}); }
         renderSpace(); } catch (err) { say(err.message); } };
     const fitb = el("button", "sp-btn", "Fit"); fitb.onclick = sFit;
-    bar.append(back, h2, ar, np, fitb);
+    const zo = el("button", "sp-btn", "\u2212"), zi = el("button", "sp-btn", "+"); zo.setAttribute("aria-label", "Zoom out"); zi.setAttribute("aria-label", "Zoom in"); zo.onclick = () => sZoomBy(.8); zi.onclick = () => sZoomBy(1.25);
+    const zs = el("span", "sp-zoom"); zs.append(zo, fitb, zi);
+    bar.append(back, h2, ar, np, zs);
     const info = el("div", "sp-info"); info.append(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."), el("p", "sp-err", spErr));
     const sb = el("div", "sboard"), sw = el("div", "sworld"); sb.appendChild(sw);
     const loosePos = (store.get("sr:loose") || {})[name] || { x: 0, y: 0 };
@@ -926,8 +929,14 @@
       if (to !== was) spCall({ op: "edit_task", id: t.id, kind: t.kind || "task", project_id: to }).catch((err) => { t.project_id = was; say(err.message); renderSpace(); }); }
   };
   spaceEl.addEventListener("pointerup", sUp); spaceEl.addEventListener("pointercancel", sUp);
+  // Safari's trackpad pinch. Without these the pinch fell through to the main map underneath and zoomed that instead.
+  let sgk = 1;
+  spaceEl.addEventListener("gesturestart", (e) => { e.preventDefault(); e.stopPropagation(); sgk = SV.k; });
+  spaceEl.addEventListener("gesturechange", (e) => { e.preventDefault(); e.stopPropagation(); const b = spaceEl.querySelector(".sboard"); if (!b) return; const r = b.getBoundingClientRect(); sZoom(e.clientX - r.left, e.clientY - r.top, sgk * e.scale); });
+  spaceEl.addEventListener("gestureend", (e) => { e.preventDefault(); e.stopPropagation(); });
+  const sZoomBy = (f) => { const b = spaceEl.querySelector(".sboard"); if (!b) return; const r = b.getBoundingClientRect(); sZoom(r.width / 2, r.height / 2, SV.k * f); };
   spaceEl.addEventListener("wheel", (e) => { const sb = e.target.closest(".sboard"); if (!sb) return; e.preventDefault(); const r = sb.getBoundingClientRect();
-    if (e.ctrlKey || e.metaKey) sZoom(e.clientX - r.left, e.clientY - r.top, SV.k * Math.exp(-e.deltaY * .012)); else { SV.x -= e.deltaX; SV.y -= e.deltaY; sView(); } }, { passive: false });
+    if (e.ctrlKey || e.metaKey) sZoom(e.clientX - r.left, e.clientY - r.top, SV.k * Math.exp(-Math.max(-40, Math.min(40, e.deltaY)) * .012)); else { SV.x -= e.deltaX; SV.y -= e.deltaY; sView(); } }, { passive: false });
   // Adding is queued, so he can keep typing a brain dump while each one lands on the calendar.
   function addTask(space, projectId, title) {
     const q = { space, project_id: projectId, title }; pend.push(q); say(""); renderSpace();
