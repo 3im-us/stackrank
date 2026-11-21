@@ -536,19 +536,30 @@
   }
   const STEPS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360, 480];
 
+  // Tasks he already timed on an earlier list stay out of the way (Zach, Nov 21): only the new ones ask for a length.
+  // They're still in the order and still sent; "Show all" brings them back to adjust.
+  let showAll = false;
   function renderResult() {
     // A change on the list (a length, a due date, an arrow) redraws it; he stays where he was instead of jumping to the top.
     const keepY = $("result").classList.contains("on") ? window.scrollY : null;
     const m = byId(), list = $("list"); list.innerHTML = "";
-    order.forEach((id, i) => {
-      const it = m.get(id), row = document.createElement("div"); row.className = "row";
+    const isNew = (id) => !m.get(id).timed || mins[id] !== undefined || dues[id] !== undefined;
+    const nNew = order.filter(isNew).length, hidden = order.length - nNew;
+    const vis = order.map((id, i) => i).filter((i) => showAll || !nNew || isNew(order[i]));
+    if (hidden && nNew) {
+      const tg = document.createElement("button"); tg.className = "tool"; tg.style.margin = "0 0 12px";
+      tg.textContent = showAll ? "Hide the " + hidden + " already timed" : "Show all " + order.length + " (" + hidden + " already timed)";
+      tg.onclick = () => { showAll = !showAll; renderResult(); }; list.appendChild(tg);
+    }
+    vis.forEach((i, k) => {
+      const id = order[i], it = m.get(id), row = document.createElement("div"); row.className = "row";
       const n = document.createElement("span"); n.className = "n"; n.textContent = pad(i + 1);
       const t = document.createElement("div"); t.className = "t"; t.textContent = it.title;
       const sm = document.createElement("small"); sm.textContent = [it.client || "3iM", it.when].filter(Boolean).join(" · "); t.appendChild(sm);
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const sel = document.createElement("select"); sel.setAttribute("aria-label", "How long it will take");
-      for (const mm of [...new Set([...STEPS, it.minutes, minsOf(it)])].sort((a, b) => a - b)) { const o = document.createElement("option"); o.value = mm; o.textContent = hm(mm) + (mm === it.minutes ? " (Sol's guess)" : ""); sel.appendChild(o); }
-      sel.value = minsOf(it); sel.classList.toggle("set", minsOf(it) !== it.minutes);
+      for (const mm of [...new Set([...STEPS, it.minutes, minsOf(it)])].sort((a, b) => a - b)) { const o = document.createElement("option"); o.value = mm; o.textContent = hm(mm) + (mm === it.minutes ? (it.timed ? " (your last)" : " (Sol's guess)") : ""); sel.appendChild(o); }
+      sel.value = minsOf(it); sel.classList.toggle("set", minsOf(it) !== it.minutes || !!it.timed);
       sel.onchange = () => { const v = +sel.value; if (v === it.minutes) delete mins[id]; else mins[id] = v; save(); renderResult(); };
       const dn = document.createElement("button"); dn.className = "did"; dn.textContent = "Already did this"; dn.onclick = () => markDone(id, dn);
       const pn = document.createElement("button"); pn.className = "did"; pn.textContent = "Pin to date"; pn.onclick = () => pinTo(id, pn);
@@ -564,8 +575,9 @@
       if (cur) { const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Clear due date"); x.onclick = (e) => { e.preventDefault(); if (it.due) dues[id] = ""; else delete dues[id]; save(); renderResult(); }; due.appendChild(x); }
       ctl.append(sel, due, pn, rn, dn); t.appendChild(ctl);
       const mv = document.createElement("div"); mv.className = "mv";
-      for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down"); b.disabled = i + d < 0 || i + d >= order.length;
-        b.onclick = () => { [order[i], order[i + d]] = [order[i + d], order[i]]; renderResult(); }; mv.appendChild(b); }
+      for (const d of [-1, 1]) { const b = document.createElement("button"); b.textContent = d < 0 ? "↑" : "↓"; b.setAttribute("aria-label", d < 0 ? "Move up" : "Move down");
+        const j = vis[k + d]; b.disabled = j === undefined; // swaps with the next row he can see
+        b.onclick = () => { [order[i], order[j]] = [order[j], order[i]]; renderResult(); }; mv.appendChild(b); }
       row.append(n, t, mv); list.appendChild(row);
     });
     $("sendn").textContent = pad(order.length) + " tasks";
@@ -595,7 +607,7 @@
     ["Clay Massage Launch Email", "Clay", 55, "Thu, Nov 19, 2:10 PM", null], ["Casted Rings Build Holiday Funnel And Ads", "Casted Rings", 60, "Fri, Nov 20, 12:55 PM", "Mon, Nov 23, 5:00 PM"],
     ["Clay Booking Windows", "Clay", 30, "Thu, Nov 19, 4:30 PM", null], ["Send Sam W-9", null, 10, "Fri, Nov 20, 3:00 PM", null],
     ["Trail Utility Black Friday Creative", "Trail Utility", 150, "Mon, Nov 23, 9:30 AM", "Wed, Nov 25, 5:00 PM"], ["Clay Pilates Waitlist", "Clay", 45, "Mon, Nov 30, 11:30 AM", null]]
-    .map((x, i) => ({ id: i + 1, title: x[0], client: x[1], minutes: x[2], when: x[3], deadline: x[4] }));
+    .map((x, i) => ({ id: i + 1, title: x[0], client: x[1], minutes: x[2], when: x[3], deadline: x[4], timed: i % 2 === 1 }));
 
   // ---------- A ranking session ----------
   async function loadSession() {
