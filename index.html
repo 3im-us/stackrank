@@ -158,6 +158,16 @@
   .legend .lg { display: inline-flex; gap: 1px; } .legend .lg .eye { padding: 6px 7px 6px 9px; } .legend .lg .eye + button { padding-left: 6px; }
   .legend .lg.off { opacity: .5; } .legend .lg.off i { background: transparent; } .legend .lg.off .eye + button { text-decoration: line-through; }
   .grp[data-hid] { display: none; }
+  /* The Area map (Zach, Nov 21): one ball per Area on the same two axes. The cards step aside while it's showing. */
+  .ball { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; scale: var(--ik, 1); border-radius: 50%; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; padding: 16px; cursor: grab; z-index: 3; box-shadow: 0 2px 0 rgba(29,29,27,.18); }
+  .ball b { font-weight: 500; font-size: 22px; letter-spacing: -.025em; line-height: 1.02; overflow-wrap: anywhere; }
+  .ball span { font-size: 9.5px; letter-spacing: .1em; opacity: .75; text-transform: uppercase; }
+  .ball.r1 { outline: 2.5px solid var(--ink); outline-offset: 5px; }
+  .ball.unset { outline: 2px dashed rgba(29,29,27,.45); outline-offset: 5px; }
+  .ball.lift { z-index: 9; box-shadow: 0 12px 26px rgba(29,29,27,.28); cursor: grabbing; }
+  .board.av .ball { display: flex; } .board.av .grp, .board.av .parkline span { display: none; } .board.av .parkline { cursor: grab; }
+  .grp[data-calc] > .tile { cursor: pointer; }
+  #avdone { left: 10px; top: 70px; display: none; } .board.av #avdone { display: block; } .board.av .hud.legend { top: 106px; }
   /* Sam's clients: the same card, striped, so his are easy to tell from Zach's. */
   .grp[data-sam] > .tile { background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.2) 0 5px, transparent 5px 13px); }
   .grp[data-sam] > .tile b::after { content: "SAM"; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; font-weight: 400; margin-left: 8px; padding: 2px 5px; border: 1px solid currentColor; vertical-align: middle; opacity: .8; }
@@ -225,7 +235,7 @@
   @media (max-width: 600px) {
     .chip .ctitle, .irow { font-size: 16px; } .chip small { font-size: 10.5px; } .tile .ct { font-size: 11.5px; } .tasks .ph { font-size: 12px; padding-top: 9px; }
     .hud.count { top: 34px !important; } .sp-bar h2 { font-size: 32px; } .padd input { font-size: 16px; } .sp-newp { flex-basis: 100%; }
-    .hud.zoom button { min-width: 44px; height: 44px; } .hud.zoom { bottom: 44px !important; } .hint { bottom: 96px !important; }
+    .hud.zoom button { min-width: 44px; height: 44px; } .hud.zoom { bottom: 44px !important; } .hint { bottom: 96px !important; } .ball { width: 112px; height: 112px; margin: -56px 0 0 -56px; padding: 10px; gap: 3px; } .ball b { font-size: 16px; } .ball span { font-size: 8px; }
   }
   .board.notasks .tile .ct::after, .grp.new .tile .ct::after, .grp.parked .tile .ct::after { content: none !important; }
   .tasks:empty { display: none; } .board.dragchip .grp:not(.new):not(.parked) .tasks:empty { display: flex; min-height: 30px; }
@@ -305,6 +315,7 @@
         <div class="hud sheet" id="sheet"></div>
         <div class="hud zoom"><button id="zlist" class="mono">List</button><button id="zfull" class="mono">Full</button><button id="zout" aria-label="Zoom out">&minus;</button><button id="zfit" class="mono">Fit</button><button id="zin" aria-label="Zoom in">+</button></div>
         <button class="hud tab" id="atab">Areas</button>
+        <button class="hud tab" id="avdone">Done &middot; back to Spaces</button>
         <button class="hud tab" id="mtab">&#9652; Add &middot; Tidy &middot; Seal</button>
         <div class="hint mono" id="mhint">Tap a card to go in. Tap its right side to open it here.</div>
       </div>
@@ -654,6 +665,13 @@
   // much it's on his mind, and anything below the dashed line is parked. New things arrive tilted in a loose pile and
   // straighten the moment he picks them up. His tasks hang under each bucket and can be reordered or moved across.
   let M = null, V = { x: 0, y: 0, k: 1 }, parkY = 760, midX = 150, G = [], groupOf = {};
+  // The Area map (Zach, Nov 21: "an area ranking map that's just big balls for each area", on the same two axes). He
+  // ranks his Areas against each other once, one ball each. Inside an Area his Spaces stay exactly where he put
+  // them. When more than one Area is showing, each Space is DRAWN at its Area's ball plus its own place inside the
+  // Area, scaled by SPREAD, so two Areas overlap by how far apart their balls sit. Only the drawing changes: where
+  // he put each card, and so everything a seal sends (order, levels, enjoyment), is untouched.
+  let areaPos = {}, AV = false;
+  const SPREAD = .5, BALL = 150;
   // Groups say what kind of thing a bucket is (3iM, another business, music, family, fun...). Each has a color from the
   // 3iM palette and can point at one of his calendars, which is how Sol knows where that group's things go.
   const COLORS = { orange: ["#E74B25", "#1D1D1B"], pink: ["#FFC8DA", "#1D1D1B"], ink: ["#1D1D1B", "#FFFFFF"], white: ["#FFFFFF", "#1D1D1B"], peach: ["#F5B5A3", "#1D1D1B"], stone: ["#B9B5B7", "#1D1D1B"] };
@@ -675,12 +693,13 @@
     for (const gr of G) chipFor(gr.id, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : ""), COLORS[gr.color][0], () => groupSheet(gr));
     if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No area", "#E1DFE0");
     if (hidden.size) { const all = document.createElement("button"); all.className = "add"; all.textContent = "Show all"; all.onclick = () => setHidden([]); box.appendChild(all); }
+    if (G.length > 1) { const r = document.createElement("button"); r.className = "add"; r.textContent = AV ? "Back to Spaces" : "Rank areas"; r.onclick = () => setAV(!AV); box.appendChild(r); }
     const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Area"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
     const sel = $("addarea"), cur = sel.value; sel.innerHTML = "";
     for (const gr of [null, ...G]) { const o = document.createElement("option"); o.value = gr ? gr.id : ""; o.textContent = gr ? gr.name : "Area: Sol decides"; sel.appendChild(o); }
     sel.value = G.some((x) => x.id === cur) ? cur : "";
     $("atab").textContent = "Areas" + (hidden.size ? " \u00b7 " + hidden.size + " hidden" : "");
-    groups().forEach(paint); autosave(); if (SP) renderSpace();
+    groups().forEach(paint); drawBalls(); autosave(); if (SP) renderSpace();
   }
   // Things that stay out of the way until he reaches for them: hover the tab (or tap it) to open, leave to close.
   function peek(handle, panel) {
@@ -711,7 +730,7 @@
     const q = (g) => !live.includes(g) ? 4 : ((y1 > y0 ? (gy(g) - y0) / (y1 - y0) : 0) <= .5 ? 0 : 2) + (enjoyOf(g) >= 0 ? 0 : 1);
     sheet.innerHTML = ""; sheet.appendChild(head("Best to worst"));
     const wrap = document.createElement("div"); wrap.className = "bw";
-    for (const gr of [...G, null]) {
+    for (const gr of [...[...G].sort((a, b) => (areaPos[a.id] ? areaPos[a.id].y : 1e9) - (areaPos[b.id] ? areaPos[b.id].y : 1e9)), null]) {
       const mine = groups().filter((g) => !g.classList.contains("new") && (groupFor(g.dataset.name) || null) === gr).sort((a, b) => q(a) - q(b) || gy(a) - gy(b) || enjoyOf(b) - enjoyOf(a));
       if (!mine.length) continue;
       const sec = document.createElement("div"), h = document.createElement("h4"), d = document.createElement("i"), t = document.createElement("span");
@@ -724,6 +743,7 @@
     sheet.appendChild(wrap); sheet.classList.add("on");
   }
   $("zlist").onclick = () => sheet.classList.contains("on") ? closeSheet() : bestSheet();
+  $("avdone").onclick = () => setAV(false);
   const sheet = $("sheet"), closeSheet = () => { sheet.classList.remove("on"); sheet.innerHTML = ""; };
   for (const ev of ["pointerdown", "wheel"]) sheet.addEventListener(ev, (e) => e.stopPropagation());
   for (const ev of ["wheel", "pointerdown"]) $("space").addEventListener(ev, (e) => e.stopPropagation());
@@ -758,7 +778,7 @@
       only.onclick = () => { closeSheet(); setHidden([...G.filter((x) => x !== gr).map((x) => x.id), "none"]); }; sheet.appendChild(only);
       name.oninput = () => { if (name.value.trim()) { gr.name = name.value.trim(); legend(); } };
       const del = document.createElement("button"); del.className = "did"; del.style.alignSelf = "flex-start"; del.textContent = "Delete this area";
-      del.onclick = () => { G = G.filter((x) => x !== gr); for (const k of Object.keys(groupOf)) if (groupOf[k] === gr.id) delete groupOf[k]; legend(); closeSheet(); }; sheet.appendChild(del); }
+      del.onclick = () => { G = G.filter((x) => x !== gr); delete areaPos[gr.id]; for (const k of Object.keys(groupOf)) if (groupOf[k] === gr.id) delete groupOf[k]; legend(); closeSheet(); }; sheet.appendChild(del); }
     sheet.classList.add("on"); if (isNew) setTimeout(() => name.focus(), 50);
   }
   const board = $("board"), world = $("world"), parkline = $("parkline"), midline = $("midline"), W = 300;
@@ -768,19 +788,31 @@
   const enjoyOf = (g) => +Math.max(-1, Math.min(1, (gx(g) + W / 2 - midX) / 640)).toFixed(2);
   const groups = () => [...world.querySelectorAll(".grp")];
   const gx = (g) => parseFloat(g.style.left) || 0, gy = (g) => parseFloat(g.style.top) || 0;
-  function view() { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; const d = 30 * V.k; board.style.backgroundSize = d + "px " + d + "px"; board.style.backgroundPosition = V.x + "px " + V.y + "px"; }
+  function view() { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; world.style.setProperty("--ik", (1 / V.k).toFixed(4)); const d = 30 * V.k; board.style.backgroundSize = d + "px " + d + "px"; board.style.backgroundPosition = V.x + "px " + V.y + "px"; }
   function zoomAt(cx, cy, k) { k = Math.max(.2, Math.min(2.2, k)); V.x = cx - (cx - V.x) * (k / V.k); V.y = cy - (cy - V.y) * (k / V.k); V.k = k; view(); }
   function fit(animate) {
     let gs = groups().filter((g) => !g.dataset.hid); if (!gs.length) gs = groups(); if (!gs.length) return;
-    const r = board.getBoundingClientRect();
+    const r = board.getBoundingClientRect(), off = (g, v) => parseFloat(g.style.getPropertyValue(v)) || 0; // where a card is drawn, not only where it sits
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-    for (const g of gs) { x0 = Math.min(x0, gx(g)); y0 = Math.min(y0, gy(g)); x1 = Math.max(x1, gx(g) + W * 1.15); y1 = Math.max(y1, gy(g) + g.offsetHeight); }
-    y1 = Math.max(y1, parkY + 110); y0 = Math.min(y0, parkY - 200);
-    if (!gs.some((g) => !g.classList.contains("new") && gy(g) < parkY)) y0 -= 240; // nothing placed yet: leave room above the pile to build upward
+    let av = null;
+    if (AV && balls().length) {
+      // The Area map: every ball in view at once. Balls keep their size on screen, so leave one ball of room around the centers.
+      for (const b of balls()) { const x = parseFloat(b.style.left), y = parseFloat(b.style.top); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+      x0 = Math.min(x0, midX); x1 = Math.max(x1, midX);
+      const bw = balls()[0].offsetWidth || BALL, room = bw + (r.width < 600 ? 24 : 90), all = Math.min(1.15, (r.width - room) / Math.max(1, x1 - x0), (r.height - room - 70) / Math.max(1, y1 - y0));
+      // On a phone, six balls squeezed to fit sit on top of each other: come in (up to twice as close) until the two nearest are mostly apart, and let him pan.
+      let near = 1e9; const P = balls().map((b) => [parseFloat(b.style.left), parseFloat(b.style.top)]); for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) near = Math.min(near, Math.hypot(P[i][0] - P[j][0], P[i][1] - P[j][1]));
+      const k = Math.max(.08, all, r.width < 600 && near < 1e9 ? Math.min(1.15, 2 * all, .6 * bw / Math.max(1, near)) : 0);
+      av = { k, x: r.width / 2 - ((x0 + x1) / 2) * k, y: r.height / 2 - ((y0 + y1) / 2) * k };
+    } else {
+      for (const g of gs) { const x = gx(g) + off(g, "--nx"), y = gy(g) + off(g, "--ny"); x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + W * 1.15); y1 = Math.max(y1, y + g.offsetHeight); }
+      y1 = Math.max(y1, parkY + 110); y0 = Math.min(y0, parkY - 200);
+      if (!gs.some((g) => !g.classList.contains("new") && gy(g) < parkY)) y0 -= 240; // nothing placed yet: leave room above the pile to build upward
+    }
     const pad = r.width < 600 ? 34 : 70, k = Math.max(.2, Math.min(1.15, (r.width - pad * 2) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)));
     // Never so far out that nothing can be read: past that, show the top of the map and let him pan.
     const floor = r.width < 600 ? .8 : .4, kk = Math.max(k, floor);
-    const to = kk > k ? { k: kk, x: r.width / 2 - ((x0 + x1) / 2) * kk, y: pad - y0 * kk } : { k, x: r.width / 2 - ((x0 + x1) / 2) * k, y: r.height / 2 - ((y0 + y1) / 2) * k };
+    const to = av || (kk > k ? { k: kk, x: r.width / 2 - ((x0 + x1) / 2) * kk, y: pad - y0 * kk } : { k, x: r.width / 2 - ((x0 + x1) / 2) * k, y: r.height / 2 - ((y0 + y1) / 2) * k });
     if (!animate || calm) { V = to; return view(); }
     const from = { ...V }, t0 = performance.now();
     (function step(t) { const p = Math.min(1, (t - t0) / 480), e = 1 - Math.pow(1 - p, 3); V = { k: from.k + (to.k - from.k) * e, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e }; view(); if (p < 1) requestAnimationFrame(step); })(t0);
@@ -789,11 +821,14 @@
   function rerank() {
     parkline.style.top = parkY + "px"; midline.style.left = midX + "px"; midline.style.height = parkY + 6000 + "px";
     const gs = groups(), live = gs.filter((g) => !g.classList.contains("new") && gy(g) < parkY).sort((a, b) => gy(a) - gy(b) || gx(a) - gx(b));
-    for (const g of gs) { const i = live.indexOf(g), keep = ["grp", g.classList.contains("new") ? "new" : "", g.classList.contains("lift") ? "lift" : "", g.classList.contains("tidy") ? "tidy" : ""];
+    // The numbers follow what he sees: with several ranked Areas showing that's the drawn height. What this returns
+    // (and so what a seal sends) is still the order of where the cards themselves sit.
+    const mids = {}, yd = new Map(live.map((g) => { const q = placeOf(g, mids); return [g, q ? q.y : gy(g)]; })), seen = mixed() ? [...live].sort((a, b) => yd.get(a) - yd.get(b) || gx(a) - gx(b)) : live;
+    for (const g of gs) { const i = seen.indexOf(g), keep = ["grp", g.classList.contains("new") ? "new" : "", g.classList.contains("lift") ? "lift" : "", g.classList.contains("tidy") ? "tidy" : ""];
       g.className = [...keep, i >= 0 && i < 3 ? "r" + (i + 1) : "", i < 0 && !g.classList.contains("new") ? "parked" : ""].filter(Boolean).join(" ");
       g.querySelector(".rk").textContent = i >= 0 ? pad(i + 1) : ""; }
     const fresh = gs.filter((g) => g.classList.contains("new")).length;
-    $("mleft").textContent = (fresh ? pad(fresh) + " still in the pile" : pad(live.length) + " on the map") + (saveNote ? " \u00b7 " + saveNote : "");
+    $("mleft").textContent = (AV ? pad(G.length) + " areas" : fresh ? pad(fresh) + " still in the pile" : pad(live.length) + " on the map") + (saveNote ? " \u00b7 " + saveNote : "");
     $("mnext").disabled = !live.length; $("mseal2").disabled = !live.length;
     $("mnextn").textContent = fresh ? "+ parks " + fresh : "";
     return live;
@@ -807,7 +842,7 @@
     draftTimer = setTimeout(async () => {
       const gs = groups(), pos = {}, tasks = {};
       for (const g of gs) { if (!g.classList.contains("new")) pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
-      try { const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ draft: { buckets: gs.map((g) => g.dataset.name), pos, parkY, midX, groups: G, groupOf, tasks } }) }); saveNote = r.ok ? "Saved" : "Not saved"; }
+      try { const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ draft: { buckets: gs.map((g) => g.dataset.name), pos, parkY, midX, groups: G, groupOf, tasks, areaPos } }) }); saveNote = r.ok ? "Saved" : "Not saved"; }
       catch { saveNote = "Not saved"; }
       if ($("map").classList.contains("on")) rerank();
     }, 700);
@@ -1110,15 +1145,59 @@
   // is bumped just far enough apart to read; it's only how they're drawn. Where he put each card (and so its
   // priority and enjoyment) doesn't change, and with fewer showing they sit exactly where he left them.
   function nudge() {
-    const gs = groups(); for (const g of gs) { g.style.removeProperty("--nx"); g.style.removeProperty("--ny"); }
-    const v = gs.filter((g) => !g.dataset.hid && !g.classList.contains("new")).map((g) => ({ g, x: gx(g), y: gy(g), w: W, h: g.offsetHeight || 54, nx: 0, ny: 0 })).sort((a, b) => a.y - b.y || a.x - b.x), gap = 10;
+    const gs = groups(), mids = {}; for (const g of gs) { g.style.removeProperty("--nx"); g.style.removeProperty("--ny"); delete g.dataset.calc; }
+    // Several ranked Areas showing: a card starts from its Area's ball plus its own place inside the Area (placeOf).
+    const v = gs.filter((g) => !g.dataset.hid && !g.classList.contains("new")).map((g) => { const q = placeOf(g, mids), x0 = gx(g), y0 = gy(g); if (q) g.dataset.calc = "1";
+      return { g, x: q ? q.x : x0, y: q ? q.y : y0, bx: q ? q.x - x0 : 0, by: q ? q.y - y0 : 0, w: W, h: g.offsetHeight || 54, nx: 0, ny: 0 }; }).sort((a, b) => a.y - b.y || a.x - b.x), gap = 10;
     for (let pass = 0, any = true; pass < 30 && any; pass++) { any = false;
       for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) { const a = v[i], b = v[j];
         const ox = Math.min(a.x + a.nx + a.w, b.x + b.nx + b.w) - Math.max(a.x + a.nx, b.x + b.nx), oy = Math.min(a.y + a.ny + a.h, b.y + b.ny + b.h) - Math.max(a.y + a.ny, b.y + b.ny);
         if (ox <= 0 || oy <= 0) continue; any = true;
         if (ox < oy) b.nx += (b.x + b.nx >= a.x + a.nx ? 1 : -1) * (ox + gap); else b.ny += oy + gap; } }
-    for (const q of v) if (q.nx || q.ny) { q.g.style.setProperty("--nx", q.nx + "px"); q.g.style.setProperty("--ny", q.ny + "px"); }
+    for (const q of v) { const dx = q.bx + q.nx, dy = q.by + q.ny; if (dx || dy) { q.g.style.setProperty("--nx", dx + "px"); q.g.style.setProperty("--ny", dy + "px"); } }
   }
+  // ---------- The Area map ----------
+  // "Several Areas showing" is what switches the drawing over; one Area by itself is always exactly as he placed it.
+  const mixed = () => !AV && G.filter((x) => !hidden.has(x.id)).length > 1;
+  const liveIn = (id) => groups().filter((g) => !g.classList.contains("new") && gy(g) < parkY && groupOf[g.dataset.name] === id);
+  // The middle of an Area's own Spaces: halfway between its highest and lowest, and its leftmost and rightmost.
+  function areaMid(id) { const gs = liveIn(id); if (!gs.length) return null; const xs = gs.map(gx), ys = gs.map(gy); return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 }; }
+  // Where a card is drawn when several Areas are showing and its Area has been ranked. null: right where he put it.
+  // The whole Area moves as one block: same order, same proportions, gaps scaled by SPREAD. Never below the park line.
+  function placeOf(g, mids) {
+    const id = groupOf[g.dataset.name], a = id && areaPos[id];
+    if (!a || !mixed() || hidden.has(id) || g.classList.contains("new") || gy(g) >= parkY) return null;
+    const m = mids[id] || (mids[id] = areaMid(id)); if (!m) return null;
+    return { x: a.x - W / 2 + SPREAD * (gx(g) - m.x), y: Math.min(parkY - 70, a.y - 27 + SPREAD * (gy(g) - m.y)) };
+  }
+  const balls = () => [...world.querySelectorAll(".ball")];
+  // An Area he hasn't placed yet starts where its Spaces already are, so the first look matches the map he knows.
+  const ballHome = (gr, i) => { const m = areaMid(gr.id); return m ? { x: Math.round(m.x + W / 2), y: Math.round(Math.min(m.y + 27, parkY - 40)) } : { x: Math.round(midX + (i - (G.length - 1) / 2) * 320), y: Math.round(parkY - 160) }; };
+  function ballRanks() { balls().sort((a, b) => parseFloat(a.style.top) - parseFloat(b.style.top) || parseFloat(a.style.left) - parseFloat(b.style.left)).forEach((b, i) => { b.querySelector(".rk").textContent = pad(i + 1); b.classList.toggle("r1", i === 0); }); }
+  function drawBalls() {
+    balls().forEach((b) => b.remove()); if (!AV) return;
+    G.forEach((gr, i) => { const q = areaPos[gr.id] || ballHome(gr, i), c = COLORS[gr.color] || COLORS.white, n = groups().filter((g) => !g.classList.contains("new") && groupOf[g.dataset.name] === gr.id).length;
+      const b = document.createElement("div"), rk = document.createElement("span"), nm = document.createElement("b"), ct = document.createElement("span");
+      b.className = "ball" + (areaPos[gr.id] ? "" : " unset"); b.dataset.id = gr.id; b.style.left = q.x + "px"; b.style.top = q.y + "px"; b.style.setProperty("--bg", c[0]); b.style.setProperty("--fg", c[1]);
+      rk.className = "rk mono"; ct.className = "mono"; nm.textContent = gr.name; ct.textContent = n + (n === 1 ? " Space" : " Spaces"); b.append(rk, nm, ct); world.appendChild(b); });
+    ballRanks();
+  }
+  // Dropping a ball ranks that Area. The first one he places saves the others where they stand, so the whole ranking
+  // exists at once. A ball never goes below the "not on my mind" line: parking is still done Space by Space.
+  function placeBall(b) {
+    const y = Math.round(Math.min(parseFloat(b.style.top) || 0, parkY - 40)); b.style.top = y + "px";
+    for (const q of balls()) if (q === b || !areaPos[q.dataset.id]) areaPos[q.dataset.id] = { x: Math.round(parseFloat(q.style.left) || 0), y: q === b ? y : Math.round(parseFloat(q.style.top) || 0) };
+    balls().forEach((q) => q.classList.remove("unset")); ballRanks();
+  }
+  let hintT = null;
+  function hint(text) { const h = $("mhint"); h.textContent = text; h.classList.remove("off"); clearTimeout(hintT); hintT = setTimeout(() => h.classList.add("off"), 5000); }
+  function setAV(on) {
+    AV = !!on; board.classList.toggle("av", AV); closeSheet(); areas.close();
+    legend(); rerank(); nudge(); fit(true);
+    if (AV) hint("Drag each Area where it belongs.");
+  }
+  // Tap a ball: go look at that Area's Spaces by themselves.
+  function openArea(id) { AV = false; board.classList.remove("av"); setHidden([...G.filter((x) => x.id !== id).map((x) => x.id), "none"]); }
   function grp(b, x, y, fresh, hint) {
     const g = document.createElement("div"); g.className = "grp" + (fresh ? " new" : ""); g.dataset.name = b.name;
     g.style.left = x + "px"; g.style.top = y + "px"; g.style.setProperty("--rot", (Math.random() * 16 - 8).toFixed(1) + "deg");
@@ -1153,9 +1232,10 @@
     $("mhint").classList.add("off");
     if (pts.size === 2) { cancelAct(); const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: V.k }; return; }
     if (pts.size > 2) return;
-    const ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), line = e.target.closest(".parkline");
-    act = { kind: ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY, ph: e.target.closest(".ph") };
-    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); act.onCt = !!e.target.closest(".ct"); act.nx = parseFloat(act.el.style.getPropertyValue("--nx")) || 0; act.ny = parseFloat(act.el.style.getPropertyValue("--ny")) || 0; }
+    const bl = e.target.closest(".ball"), ch = e.target.closest(".chip"), tile = e.target.closest(".tile"), line = !AV && e.target.closest(".parkline");
+    act = { kind: bl ? "ball" : ch ? "chip" : tile ? "grp" : line ? "line" : "pan", x0: e.clientX, y0: e.clientY, moved: false, el: bl || ch || (tile && tile.parentNode), vx: V.x, vy: V.y, py: parkY, ph: e.target.closest(".ph") };
+    if (act.kind === "grp") { act.gx = gx(act.el); act.gy = gy(act.el); act.onCt = !!e.target.closest(".ct"); act.nx = parseFloat(act.el.style.getPropertyValue("--nx")) || 0; act.ny = parseFloat(act.el.style.getPropertyValue("--ny")) || 0; act.calc = !!act.el.dataset.calc; }
+    if (act.kind === "ball") { act.gx = parseFloat(bl.style.left) || 0; act.gy = parseFloat(bl.style.top) || 0; }
     if (act.kind === "pan") board.classList.add("pan");
   });
   board.addEventListener("pointermove", (e) => {
@@ -1164,22 +1244,28 @@
     if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()], r = board.getBoundingClientRect(); zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d); return; }
     if (!act) return;
     const dx = e.clientX - act.x0, dy = e.clientY - act.y0;
-    if (!act.moved) { if (Math.hypot(dx, dy) < 5) return; act.moved = true; if (act.kind === "grp") { act.gx += act.nx; act.gy += act.ny; act.el.style.removeProperty("--nx"); act.el.style.removeProperty("--ny"); act.el.style.transition = "none"; act.el.classList.remove("new", "tidy"); act.el.classList.add("lift"); world.appendChild(act.el); buzz(6); } if (act.kind === "chip") chipBegin(e); }
+    if (!act.moved) { if (Math.hypot(dx, dy) < 5) return; act.moved = true;
+      // A card drawn from the Area ranking isn't where he put it, so dragging it would save the wrong spot: the drag pans instead.
+      if (act.kind === "grp" && act.calc) { act.kind = "pan"; board.classList.add("pan"); hint("Show one Area to move its Spaces."); }
+      if (act.kind === "ball") { act.el.classList.add("lift"); act.el.classList.remove("unset"); world.appendChild(act.el); buzz(6); }
+      if (act.kind === "grp") { act.gx += act.nx; act.gy += act.ny; act.el.style.removeProperty("--nx"); act.el.style.removeProperty("--ny"); act.el.style.transition = "none"; act.el.classList.remove("new", "tidy"); act.el.classList.add("lift"); world.appendChild(act.el); buzz(6); } if (act.kind === "chip") chipBegin(e); }
     if (act.kind === "pan") { V.x = act.vx + dx; V.y = act.vy + dy; view(); }
     else if (act.kind === "line") { parkY = Math.round(act.py + dy / V.k); rerank(); }
     else if (act.kind === "grp") { act.el.style.left = act.gx + dx / V.k + "px"; act.el.style.top = act.gy + dy / V.k + "px"; const before = act.el.className; rerank(); if (act.el.className !== before) buzz(4); }
+    else if (act.kind === "ball") { act.el.style.left = act.gx + dx / V.k + "px"; act.el.style.top = act.gy + dy / V.k + "px"; ballRanks(); }
     else if (act.kind === "chip") chipMove(e);
   });
   const up = (e) => {
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null;
     if (!act) return;
+    if (act.kind === "ball") { act.el.classList.remove("lift"); if (act.moved) placeBall(act.el); else { const id = act.el.dataset.id; board.classList.remove("pan"); act = null; return openArea(id); } }
     if (act.kind === "grp") { act.el.classList.remove("lift"); act.el.style.transition = ""; rerank(); if (act.moved) nudge(); if (!act.moved) { if (act.onCt && act.el.dataset.has && !board.classList.contains("notasks")) toggleShut(act.el); else openSpace(act.el); } }
     if (act.kind === "pan" && !act.moved && act.ph) { const id = +act.ph.dataset.pid; if (pshut.has(id)) pshut.delete(id); else pshut.add(id); store.set("sr:pshut", [...pshut]); relayout(); buzz(4); }
     if (act.kind === "chip" && act.moved) chipDrop();
     if (act.moved && act.kind !== "pan") autosave();
     board.classList.remove("pan"); act = null;
   };
-  function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") { act.el.classList.remove("lift"); act.el.style.transition = ""; } board.classList.remove("pan"); act = null; }
+  function cancelAct() { if (act && act.kind === "chip" && act.moved) chipDrop(); if (act && act.kind === "grp") { act.el.classList.remove("lift"); act.el.style.transition = ""; } if (act && act.kind === "ball") { act.el.classList.remove("lift"); if (act.moved) { placeBall(act.el); autosave(); } } board.classList.remove("pan"); act = null; }
   board.addEventListener("pointerup", up); board.addEventListener("pointercancel", up);
   board.addEventListener("wheel", (e) => { e.preventDefault(); const r = board.getBoundingClientRect();
     if (e.ctrlKey || e.metaKey) zoomAt(e.clientX - r.left, e.clientY - r.top, V.k * Math.exp(-e.deltaY * .012)); else { V.x -= e.deltaX; V.y -= e.deltaY; view(); } $("mhint").classList.add("off"); }, { passive: false });
@@ -1231,6 +1317,7 @@
   // Tidy up: everything on the map slides into one clean column in its current order, the parked row lines up under
   // the line, and the view re-fits. The satisfying part.
   function tidy() {
+    if (AV) return hint("Tap Done first: Tidy lines up Spaces.");
     const live = rerank(), gs = groups(); let y = 0;
     for (const g of gs) { g.classList.add("tidy"); delete g.dataset.hid; } // hidden cards are measured and placed too, then hidden again below
     // Height order in rows; each card keeps its side of the center line, snapped to one of five lanes.
@@ -1264,6 +1351,8 @@
     G = (M.groups || []).filter((x) => COLORS[x.color]).map((x) => ({ ...x })); groupOf = { ...(M.groupOf || {}) };
     if (!G.length) { G = [{ id: "g3im", name: "3iM", color: "orange", calendar: (M.calendars || []).includes("Business") ? "Business" : null }];
       for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (b.kind === "client") groupOf[b.name] = "g3im"; for (const n of M.clients || []) groupOf[n] = "g3im"; }
+    areaPos = {}; for (const gr of G) { const q = (M.areaPos || {})[gr.id]; if (q && Number.isFinite(+q.x) && Number.isFinite(+q.y)) areaPos[gr.id] = { x: +q.x, y: +q.y }; }
+    AV = false; board.classList.remove("av"); balls().forEach((b) => b.remove());
     const samSet = new Set(M.sams || []); for (const b of [...(M.order || []), ...(M.parked || []), ...(M.fresh || [])]) if (samSet.has(b.name)) b.sam = true;
     const pos = M.pos || {}, slim = board.getBoundingClientRect().width < 600;
     // Anything with a saved place goes back there, sealed or not (an autosaved board that was never sealed has only "fresh" buckets).
@@ -1282,7 +1371,7 @@
     for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
     legend(); relayout();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
-    $("mhint").classList.remove("off"); setTimeout(() => $("mhint").classList.add("off"), 6000);
+    hint("Tap a card to go in. Tap its right side to open it here.");
     show("map"); rerank(); nudge(); fit(false); loading = false;
     if (!calm) groups().filter((g) => g.classList.contains("new")).forEach((g, i) => g.animate([{ opacity: 0, transform: `translateY(-40px) rotate(${(Math.random() * 40 - 20).toFixed(0)}deg) scale(.85)` }, { opacity: 1, transform: "none" }], { duration: 460, delay: 45 * i, easing: ease, fill: "backwards" }));
   }
@@ -1299,7 +1388,7 @@
     for (const g of gs) { pos[g.dataset.name] = { x: Math.round(gx(g)), y: Math.round(gy(g)) }; tasks[g.dataset.name] = [...g.querySelectorAll(".chip")].map((c) => +c.dataset.id); }
     try {
       if (!demo) {
-        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, enjoy, pos, parkY, midX, tasks, groups: G, groupOf, reorganize: !!reorganize } }) });
+        const r = await fetch(API + "?k=" + encodeURIComponent(key), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ map: { order: live.map((g) => g.dataset.name), parked: parked.map((g) => g.dataset.name), levels, enjoy, pos, parkY, midX, tasks, groups: G, groupOf, areaPos, reorganize: !!reorganize } }) });
         if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).error) || "It didn't save. Try again.");
       }
       sent("Sealed.", demo ? "This was a demo, so nothing was saved." : reorganize ? "Sol has your map and is reorganizing your next 5 work days to match. Check Slack for what changed." : "Sol has your map. Your task priorities lean this way for the next week, then it fades until you redo it. The board stays as you left it.");
