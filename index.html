@@ -176,6 +176,10 @@
   .sp-newp input { flex: 1; min-width: 0; width: 0; font: inherit; font-size: 16px; padding: 9px 12px; background: transparent; border: 0; outline: 0; color: var(--ink); border-radius: 0; }
   .sboard { position: relative; flex: 1; overflow: hidden; cursor: grab; user-select: none; -webkit-user-select: none; background-image: radial-gradient(rgba(29,29,27,.22) 1.2px, transparent 1.3px); border-top: 1.5px solid rgba(29,29,27,.12); }
   .sworld { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+  .sworld .smid { position: absolute; top: -8000px; height: 16000px; width: 0; border-left: 2px dashed rgba(29,29,27,.25); pointer-events: none; }
+  .sboard .saxis { position: absolute; left: 10px; top: 10px; bottom: 12px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; opacity: .6; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .sboard .saxis span:first-child::before { content: "\2191  "; } .sboard .saxis span:last-child::before { content: "\2193  "; }
+  .sboard .senjoy { position: absolute; left: 0; right: 0; bottom: 12px; display: flex; justify-content: space-between; padding: 0 120px 0 90px; pointer-events: none; opacity: .6; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
   .grp.pj.drop > .tile { outline: 2.5px dashed var(--ink); outline-offset: 4px; }
   .grp.pj .chip.wait { opacity: .5; } .grp.pj .chip.bad small { color: var(--orange); opacity: 1; white-space: normal; } .grp.pj .chip.hold { opacity: .3; }
   .padd { display: flex; } .padd input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 7px 10px; background: transparent; border: 1.5px dashed rgba(29,29,27,.35); border-radius: 12px; outline: 0; color: var(--ink); }
@@ -886,8 +890,13 @@
     const zo = el("button", "sp-btn", "\u2212"), zi = el("button", "sp-btn", "+"); zo.setAttribute("aria-label", "Zoom out"); zi.setAttribute("aria-label", "Zoom in"); zo.onclick = () => sZoomBy(.8); zi.onclick = () => sZoomBy(1.25);
     const zs = el("span", "sp-zoom"); zs.append(zo, fitb, zi);
     bar.append(back, h2, ar, np, zs);
-    const info = el("div", "sp-info"); info.append(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday." : "These live on the map only. Open one to send it to your calendar."), el("p", "sp-err", spErr));
+    const info = el("div", "sp-info"); info.append(el("p", "sp-note", tracked() ? "Tasks here are real: adding one puts it on your Business calendar and this board in Monday. Higher Projects go first; in a Project, top goes first." : "These live on the map only. Open one to send it to your calendar."), el("p", "sp-err", spErr));
     const sb = el("div", "sboard"), sw = el("div", "sworld"); sb.appendChild(sw);
+    // The Space's board has the map's two axes (Zach, Nov 20): higher Projects go first, right of the line he enjoys.
+    const ax = el("div", "saxis mono"); ax.append(el("span", "", "Do first"), el("span", "", "Later")); sb.appendChild(ax);
+    const ej = el("div", "senjoy mono"); ej.append(el("span", "", "\u2190 Don't enjoy"), el("span", "", "Enjoy \u2192")); sb.appendChild(ej);
+    const mx = (M.mids || {})[name], pxs = projects.filter((p) => Number.isFinite(p.x)).map((p) => p.x + W / 2);
+    if (pxs.length || Number.isFinite(mx)) { const ml = el("div", "smid"); ml.style.left = (Number.isFinite(mx) ? mx : (Math.min(...pxs) + Math.max(...pxs)) / 2) + "px"; sw.appendChild(ml); }
     const loosePos = (store.get("sr:loose") || {})[name] || { x: 0, y: 0 };
     const schip = (t) => { const c = el("div", "chip"); c.dataset.id = t.id; c.dataset.kind = t.kind || "task";
       const meta = t.kind === "item" ? (t.repeat_uid ? [(t.rule || "Repeats"), t.next ? "next " + t.next.split(", ").slice(0, 2).join(", ") : ""].filter(Boolean).join(" \u00b7 ") : t.on_calendar ? "On " + t.on_calendar : "") : hm(t.minutes) + (t.due ? " · due " + t.due.split(", ").slice(0, 2).join(", ").replace(/^\w+, /, "") : "");
@@ -956,6 +965,8 @@
       const tids = seq.filter((c) => c.dataset.kind !== "item").map((c) => +c.dataset.id), iids = seq.filter((c) => c.dataset.kind === "item").map((c) => +c.dataset.id);
       const box = SP.querySelector(".tasks"); for (const id of tids) { const c = box.querySelector(`.chip[data-id="${id}"]`); if (c) box.appendChild(c); }
       if (iids.length) { iids.forEach((id, k) => { const it = M.items.find((i) => i.id === id); if (it) it.pos = k; }); M.items.sort((x, y) => x.pos - y.pos); if (!demo) spCall({ op: "order_items", ids: iids }).catch(() => {}); }
+      // Top to bottom is the order he wants them done: saved right away, for the card he dropped on and the one he took from.
+      if (tids.length && !demo) spCall({ op: "order_tasks", ids: tids }).catch(() => {});
       autosave(); renderSpace();
       if (to !== was) spCall({ op: "edit_task", id: t.id, kind: t.kind || "task", project_id: to }).catch((err) => { t.project_id = was; say(err.message); renderSpace(); }); }
   };
