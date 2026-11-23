@@ -138,10 +138,10 @@
   .grp { position: absolute; width: 300px; z-index: 2; translate: var(--nx, 0px) var(--ny, 0px); transition: translate .35s cubic-bezier(.2,.85,.2,1); }
   .grp.tidy { transition: left .55s cubic-bezier(.2,.85,.2,1), top .55s cubic-bezier(.2,.85,.2,1); }
   .grp.lift { z-index: 9; } .grp[data-has]:not([data-shut]):not(.lift) { z-index: 5; }
-  .tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 15px 16px; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
+  .tile { position: relative; display: flex; align-items: center; gap: 11px; padding: 18px 20px; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); cursor: grab; border-radius: 16px 22px 18px 24px / 22px 16px 24px 18px; box-shadow: 0 1px 0 rgba(29,29,27,.14); transition: background .25s, color .25s, transform .3s cubic-bezier(.2,.85,.2,1), box-shadow .2s; transform-origin: 0 50%; }
   .grp:nth-child(3n+2) > .tile { border-radius: 22px 16px 24px 18px / 16px 24px 18px 22px; }
   .grp:nth-child(3n) > .tile { border-radius: 18px 24px 16px 22px / 24px 18px 22px 16px; }
-  .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 23px; overflow-wrap: anywhere; }
+  .tile b { flex: 1; font-weight: 500; letter-spacing: -.025em; line-height: 1.05; font-size: 26px; overflow-wrap: anywhere; }
   .tile .rk { font-size: 12px; letter-spacing: .12em; min-width: 20px; opacity: .75; }
   .tile .ct { opacity: .6; white-space: nowrap; font-size: 10px; }
   .tile .x { font-family: var(--mono); font-size: 15px; padding: 2px 6px; opacity: .6; }
@@ -152,11 +152,19 @@
   .grp.r2 > .tile { transform: scale(1.09); }
   .grp.r3 > .tile { transform: scale(1.04); }
   .grp.parked > .tile { opacity: .5; box-shadow: none; } .grp.parked .rk { display: none; }
-  .legend { left: 10px; top: 36px; right: 150px; flex-wrap: wrap; gap: 5px; }
-  .legend button { display: inline-flex; align-items: center; gap: 7px; background: var(--white); padding: 6px 10px 6px 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; }
+  /* The Areas panel (Zach, Nov 23: "It's a skinny bar and hard to select things on and off"): one column of big
+     rows. The whole row shows or hides an Area; Edit is its own button; Show all and Hide all sit on top. */
+  .legend { left: 10px; top: 36px; width: min(340px, calc(100% - 20px)); max-height: calc(100% - 120px); overflow-y: auto; flex-direction: column; gap: 2px; background: var(--fog); padding: 6px; box-shadow: 0 10px 30px rgba(29,29,27,.18); }
+  .legend button { display: inline-flex; align-items: center; gap: 10px; background: var(--white); padding: 0 12px; min-height: 46px; font-family: var(--mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
   .legend button i, .pick button i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.55); flex: none; }
-  .legend .lg { display: inline-flex; gap: 1px; } .legend .lg .eye { padding: 6px 7px 6px 9px; } .legend .lg .eye + button { padding-left: 6px; }
-  .legend .lg.off { opacity: .5; } .legend .lg.off i { background: transparent; } .legend .lg.off .eye + button { text-decoration: line-through; }
+  .legend button i { width: 20px; height: 20px; }
+  .legend .lg { display: flex; gap: 2px; } .legend .lg .eye { flex: 1; min-width: 0; } .legend .lg .eye span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .lg .eye small { font-size: 9.5px; opacity: .55; white-space: nowrap; } .legend .lg .eye em { font-style: normal; font-size: 10px; opacity: .6; min-width: 34px; text-align: right; }
+  .legend .lg .ed { flex: none; font-size: 10px; opacity: .7; padding: 0 12px; }
+  .legend .lg.off .eye { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(29,29,27,.25); } .legend .lg.off .eye span { opacity: .5; text-decoration: line-through; } .legend .lg.off i { background: transparent; }
+  .legend .row2 { display: flex; gap: 2px; } .legend .row2 button { flex: 1; justify-content: center; min-height: 40px; font-size: 11px; }
+  .legend .row2 button:disabled { opacity: .35; }
+  .board.nogrid, .board.nogrid .sboard { background-image: none; }
   .grp[data-hid] { display: none; }
   /* The Area map (Zach, Nov 21): one ball per Area on the same two axes. The cards step aside while it's showing. */
   .ball { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; scale: var(--ik, 1); border-radius: 50%; background: var(--bg, var(--white)); color: var(--fg, var(--ink)); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; padding: 16px; cursor: grab; z-index: 3; box-shadow: 0 2px 0 rgba(29,29,27,.18); }
@@ -194,7 +202,7 @@
   .grp.pj .chip.wait { opacity: .5; } .grp.pj .chip.bad small { color: var(--orange); opacity: 1; white-space: normal; } .grp.pj .chip.hold { opacity: .3; }
   .padd { display: flex; } .padd input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 7px 10px; background: transparent; border: 1.5px dashed rgba(29,29,27,.35); border-radius: 12px; outline: 0; color: var(--ink); }
   .sheet .acts { display: flex; flex-wrap: wrap; gap: 6px 18px; } .sheet .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); padding: 4.5px 10px; }
+  .legend button.add { background: transparent; border: 1.5px dashed rgba(29,29,27,.45); }
   .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--white); padding: 16px 16px 18px; display: none; flex-direction: column; gap: 12px; z-index: 50; box-shadow: 0 -10px 30px rgba(29,29,27,.14); cursor: default; max-height: 80%; overflow: auto; }
   .hud.sheet { display: none; } .hud.sheet.on { display: flex; }
   .sheet .bw { max-height: min(62vh, 560px); overflow-y: auto; display: grid; gap: 18px; padding-right: 4px; overscroll-behavior: contain; }
@@ -697,16 +705,32 @@
   function legend() {
     const box = $("legend"); box.innerHTML = "";
     // Each group: tap the dot to hide or show it, tap the name to edit it.
-    const chipFor = (id, label, bg, edit) => { const w = document.createElement("span"), e = document.createElement("button"), d = document.createElement("i"), b = document.createElement("button"), off = hidden.has(id);
-      w.className = "lg" + (off ? " off" : ""); e.className = "eye"; e.setAttribute("aria-label", (off ? "Show " : "Hide ") + label); d.style.setProperty("--bg", bg); e.appendChild(d); b.textContent = label;
-      const flip = () => { const h = new Set(hidden); if (off) h.delete(id); else h.add(id); setHidden(h); buzz(6); };
-      e.onclick = flip; b.onclick = edit || flip; w.append(e, b); box.appendChild(w); };
+    const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text != null) x.textContent = text; return x; };
+    const hasNone = hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name)), ids = [...G.map((x) => x.id), ...(hasNone ? ["none"] : [])];
     for (const k of [...hidden]) if (k !== "none" && !G.some((x) => x.id === k)) hidden.delete(k);
-    for (const gr of G) chipFor(gr.id, gr.name + (gr.calendar ? " \u2192 " + gr.calendar : ""), COLORS[gr.color][0], () => groupSheet(gr));
-    if (hidden.has("none") || groups().some((g) => !groupFor(g.dataset.name))) chipFor("none", "No area", "#E1DFE0");
-    if (hidden.size) { const all = document.createElement("button"); all.className = "add"; all.textContent = "Show all"; all.onclick = () => setHidden([]); box.appendChild(all); }
-    if (G.length > 1) { const r = document.createElement("button"); r.className = "add"; r.textContent = AV ? "Back to Spaces" : "Rank areas"; r.onclick = () => setAV(!AV); box.appendChild(r); }
-    const a = document.createElement("button"); a.className = "add"; a.textContent = "+ Area"; a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; box.appendChild(a);
+    // Show all / Hide all, always on top.
+    const top = el("div", "row2"), sa = el("button", "", "Show all"), ha = el("button", "", "Hide all");
+    sa.disabled = !hidden.size; ha.disabled = ids.every((k) => hidden.has(k));
+    sa.onclick = () => { setHidden([]); buzz(6); }; ha.onclick = () => { setHidden(ids); buzz(6); };
+    top.append(sa, ha); box.appendChild(top);
+    // Each Area: the whole row turns it on or off; Edit is separate.
+    const rowFor = (id, label, sub, bg, edit) => { const w = el("div", "lg" + (hidden.has(id) ? " off" : "")), e = el("button", "eye"), d = el("i"), off = hidden.has(id);
+      e.setAttribute("aria-label", (off ? "Show " : "Hide ") + label); e.setAttribute("aria-pressed", String(!off)); d.style.setProperty("--bg", bg);
+      e.append(d, el("span", "", label)); if (sub) e.appendChild(el("small", "", sub)); e.appendChild(el("em", "", off ? "Off" : "On"));
+      e.onclick = () => { const h = new Set(hidden); if (off) h.delete(id); else h.add(id); setHidden(h); buzz(6); };
+      w.appendChild(e); if (edit) { const b = el("button", "ed", "Edit"); b.setAttribute("aria-label", "Edit " + label); b.onclick = edit; w.appendChild(b); } box.appendChild(w); };
+    for (const gr of G) rowFor(gr.id, gr.name, gr.calendar ? "\u2192 " + gr.calendar : "", COLORS[gr.color][0], () => groupSheet(gr));
+    if (hasNone) rowFor("none", "No area", "", "#E1DFE0");
+    const foot = el("div", "row2");
+    if (G.length > 1) { const r = el("button", "add", AV ? "Back to Spaces" : "Rank areas"); r.onclick = () => setAV(!AV); foot.appendChild(r); }
+    const a = el("button", "add", "+ Area"); a.onclick = () => { const used = G.map((x) => x.color), gr = { id: "g" + Math.random().toString(36).slice(2, 9), name: "", color: Object.keys(COLORS).find((c) => !used.includes(c)) || "white", calendar: null }; groupSheet(gr, true); }; foot.appendChild(a);
+    box.appendChild(foot);
+    // The dotted grid behind the map, on or off (kept on this device).
+    const view = el("div", "row2"), gb = el("button", "", "Grid: " + (store.get("sr:nogrid") ? "off" : "on"));
+    gb.setAttribute("aria-pressed", String(!store.get("sr:nogrid")));
+    gb.onclick = () => { store.set("sr:nogrid", !store.get("sr:nogrid")); $("board").classList.toggle("nogrid", !!store.get("sr:nogrid")); legend(); };
+    view.appendChild(gb); box.appendChild(view);
+    $("board").classList.toggle("nogrid", !!store.get("sr:nogrid"));
     const sel = $("addarea"), cur = sel.value; sel.innerHTML = "";
     for (const gr of [null, ...G]) { const o = document.createElement("option"); o.value = gr ? gr.id : ""; o.textContent = gr ? gr.name : "Area: Sol decides"; sel.appendChild(o); }
     sel.value = G.some((x) => x.id === cur) ? cur : "";
