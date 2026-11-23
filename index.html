@@ -225,7 +225,19 @@
   .board.notasks .tasks, .grp.new .tasks, .grp.parked .tasks { display: none; }
   .grp[data-shut] > .tasks { display: none; }
   .hint { bottom: 46px !important; }
-  /* The right side of a card opens it on the map: Projects, and tasks under them. */
+  /* Every Space on the map is a circle, like the Area balls (Zach, Nov 23). The name sizes itself to fit (--fs,
+     set from its length); the number sits above it and the task count below, which still opens the Space here.
+     Projects inside a Space keep their card shape. */
+  #world > .grp > .tile { width: 148px; height: 148px; border-radius: 50% !important; flex-direction: column; justify-content: center; gap: 4px; padding: 14px; text-align: center; transform-origin: 50% 50%; box-shadow: 0 2px 0 rgba(29,29,27,.18); }
+  #world > .grp > .tile b { flex: none; font-size: var(--fs, 18px); line-height: 1.04; max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+  #world > .grp > .tile .rk { min-width: 0; font-size: 11px; } #world > .grp > .tile .rk:empty { display: none; }
+  #world > .grp > .tile .ct { font-size: 9.5px; } #world > .grp > .tile .ct:empty { display: none; }
+  #world > .grp[data-has] > .tile .ct { padding: 5px 10px; margin: -3px 0 -5px; }
+  #world > .grp > .tile .x { position: absolute; top: 4px; right: 4px; }
+  #world > .grp > .tasks { margin-left: 74px; }
+  #world > .grp.new > .tile { padding: 14px; }
+  #world > .grp[data-sam] > .tile b::after { display: block; margin: 4px auto 0; width: max-content; }
+  /* The task count on a card opens it on the map: Projects, and tasks under them. */
   .grp[data-has] .tile .ct { cursor: pointer; padding: 16px 2px 16px 16px; margin: -16px 0; } .grp[data-has] .tile .ct::after { content: "  \25BE"; font-size: 13px; } .grp[data-has][data-shut] .tile .ct::after { content: "  \25B8"; }
   .tasks .ph { display: flex; gap: 7px; align-items: baseline; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 2px 1px; cursor: pointer; }
   .tasks .ph::before { content: "\25BE"; } .tasks .ph[data-shut]::before { content: "\25B8"; } .tasks .ph span { opacity: .55; }
@@ -325,7 +337,7 @@
         <button class="hud tab" id="atab">Areas</button>
         <button class="hud tab" id="avdone">Done &middot; back to Spaces</button>
         <button class="hud tab" id="mtab">&#9652; Add &middot; Tidy &middot; Seal</button>
-        <div class="hint mono" id="mhint">Tap a card to go in. Tap its right side to open it here.</div>
+        <div class="hint mono" id="mhint">Tap a circle to go in. Tap its task count to open it here.</div>
       </div>
       <div class="mact" id="mact">
         <form class="add" id="addb"><input id="addin" placeholder="Add anything on your mind" maxlength="40" autocomplete="off" enterkeyhint="done"><select id="addarea" aria-label="Area"></select><button class="tool" type="submit">Add</button></form>
@@ -701,7 +713,8 @@
   let hidden = new Set(store.get("sr:hidden") || []);
   const hidKey = (g) => (groupFor(g.dataset.name) || { id: "none" }).id;
   function setHidden(ids) { hidden = new Set(ids); store.set("sr:hidden", [...hidden]); legend(); rerank(); nudge(); fit(true); }
-  function paint(g) { if (hidden.has(hidKey(g))) g.dataset.hid = "1"; else delete g.dataset.hid; const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B"); }
+  function paint(g) { if (hidden.has(hidKey(g))) g.dataset.hid = "1"; else delete g.dataset.hid; const gr = groupFor(g.dataset.name), c = COLORS[gr ? gr.color : "white"] || COLORS.white; g.style.setProperty("--bg", gr ? c[0] : "#E1DFE0"); g.style.setProperty("--fg", gr ? c[1] : "#1D1D1B");
+    const nm = g.dataset.name || "", longest = Math.max(...nm.split(/\s+/).map((w) => w.length)); g.style.setProperty("--fs", (longest > 11 ? 14 : nm.length <= 7 ? 25 : nm.length <= 13 ? 21 : nm.length <= 22 ? 17 : 14) + "px"); }
   function legend() {
     const box = $("legend"); box.innerHTML = "";
     // Each group: tap the dot to hide or show it, tap the name to edit it.
@@ -1407,7 +1420,7 @@
     for (const g of groups()) for (const t of M.tasks.filter((t) => t.bucket === g.dataset.name).sort((a, b) => a.pos - b.pos)) g.querySelector(".tasks").appendChild(chip(t));
     legend(); relayout();
     board.classList.remove("notasks"); $("mtasks").textContent = "Hide tasks";
-    hint("Tap a card to go in. Tap its right side to open it here.");
+    hint("Tap a circle to go in. Tap its task count to open it here.");
     show("map"); rerank(); nudge(); fit(false); loading = false;
     if (!calm) groups().filter((g) => g.classList.contains("new")).forEach((g, i) => g.animate([{ opacity: 0, transform: `translateY(-40px) rotate(${(Math.random() * 40 - 20).toFixed(0)}deg) scale(.85)` }, { opacity: 1, transform: "none" }], { duration: 460, delay: 45 * i, easing: ease, fill: "backwards" }));
   }
